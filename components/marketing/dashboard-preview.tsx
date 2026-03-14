@@ -61,17 +61,17 @@ const sidebarItems = [
 
 export function DashboardPreview() {
   return (
-    <section className="bg-gray-50 py-24 lg:py-32">
+    <section className="bg-surface py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         {/* ── Section header ─────────────────────────────────────────── */}
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-widest text-violet-600">
+          <p className="text-sm font-semibold uppercase tracking-widest text-teal">
             Platform preview
           </p>
-          <h2 className="mt-3 text-4xl font-semibold tracking-tight text-gray-900 lg:text-5xl">
+          <h2 className="mt-3 text-4xl font-semibold tracking-tight text-ink lg:text-5xl">
             Your entire product portfolio, at a glance
           </h2>
-          <p className="mt-5 text-lg leading-8 text-gray-600">
+          <p className="mt-5 text-lg leading-8 text-steel">
             A unified dashboard surfaces KPIs, product health, BOM structures, and quality
             findings — so your team always knows where each program stands.
           </p>

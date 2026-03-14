@@ -19,7 +19,8 @@ export function CustomerFeedbackForm({ productId }: CustomerFeedbackFormProps) {
     setIsPending(true);
     setErrorMessage(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     try {
       const response = await fetch("/api/feedback", {
@@ -41,7 +42,7 @@ export function CustomerFeedbackForm({ productId }: CustomerFeedbackFormProps) {
         throw new Error(payload.error ?? "Unable to store customer feedback.");
       }
 
-      event.currentTarget.reset();
+      form.reset();
       router.refresh();
     } catch (error) {
       setErrorMessage(

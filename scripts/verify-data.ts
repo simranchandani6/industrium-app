@@ -51,7 +51,6 @@ loadEnvLocal();
 const supabaseUrl = process.env["NEXT_PUBLIC_SUPABASE_URL"];
 const anonKey = process.env["NEXT_PUBLIC_SUPABASE_ANON_KEY"];
 const serviceRoleKey = process.env["SUPABASE_SERVICE_ROLE_KEY"];
-const demoUserId = "aaaaaaaa-1111-4111-8111-111111111111";
 const demoEmail = "simra.chandani@bacancy.com";
 const demoPassword = "DemoPass123!";
 
@@ -191,12 +190,7 @@ async function verifyDemoAuthUser() {
     }
   }
 
-  const { data, error } = await withRetry(() => adminClient.auth.admin.getUserById(demoUserId));
-
-  if (!error && data.user) {
-    resolvedUserId = data.user.id;
-    pass("Demo auth user", `${data.user.email} • ${data.user.id}`);
-  } else {
+  if (!resolvedUserId) {
     const { data: listData, error: listError } = await withRetry(() =>
       adminClient.auth.admin.listUsers({
         page: 1,
@@ -206,26 +200,21 @@ async function verifyDemoAuthUser() {
 
     if (listError) {
       fail("Demo auth user", listError.message);
-      return;
+      return null;
     }
 
-    const demoUser = listData.users.find((user: any) => user.email === demoEmail || user.id === demoUserId);
+    const demoUser = listData.users.find((user: any) => user.email === demoEmail);
 
     if (!demoUser) {
       fail(
         "Demo auth user",
         "not found in Auth Admin API; the business seed exists, but the demo login is not usable yet",
       );
-      return;
+      return null;
     }
 
     resolvedUserId = demoUser.id;
     pass("Demo auth user", `${demoUser.email} • ${demoUser.id}`);
-  }
-
-  if (resolvedUserId !== demoUserId) {
-    fail("Demo auth user id", `expected ${demoUserId}, found ${resolvedUserId}`);
-    return;
   }
 
   const { data: profile, error: profileError } = await withRetry(() =>
@@ -242,9 +231,10 @@ async function verifyDemoAuthUser() {
   }
 
   pass("Demo public profile", `${profile.full_name} • ${profile.email}`);
+  return resolvedUserId;
 }
 
-async function verifyProductSeeds() {
+async function verifyProductSeeds(demoUserId: string) {
   console.log("\n-- Product data ----------------------------------------------");
 
   const { data, error } = await withRetry(() =>
@@ -312,7 +302,7 @@ async function verifyBomAndCosting() {
   }
 }
 
-async function verifyWorkflowModules() {
+async function verifyWorkflowModules(demoUserId: string) {
   console.log("\n-- Workflow modules ------------------------------------------");
 
   const checks: Array<{
@@ -377,10 +367,18 @@ async function main() {
   console.log("==============================================================");
 
   await verifySchemaTablesExist();
-  await verifyDemoAuthUser();
-  await verifyProductSeeds();
+  const demoUserId = await verifyDemoAuthUser();
+
+  if (!demoUserId) {
+    console.log("\n==============================================================");
+    console.log(`  Results: ${passCount} passed  •  ${failCount} failed`);
+    console.log("==============================================================\n");
+    process.exit(1);
+  }
+
+  await verifyProductSeeds(demoUserId);
   await verifyBomAndCosting();
-  await verifyWorkflowModules();
+  await verifyWorkflowModules(demoUserId);
   await verifyStorageBucket();
 
   console.log("\n==============================================================");

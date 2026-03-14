@@ -20,7 +20,8 @@ export function QualityIssueForm({ products }: QualityIssueFormProps) {
     setIsPending(true);
     setErrorMessage(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     try {
       const response = await fetch("/api/quality", {
@@ -42,7 +43,7 @@ export function QualityIssueForm({ products }: QualityIssueFormProps) {
         throw new Error(payload.error ?? "Unable to create quality issue.");
       }
 
-      event.currentTarget.reset();
+      form.reset();
       router.refresh();
     } catch (error) {
       setErrorMessage(

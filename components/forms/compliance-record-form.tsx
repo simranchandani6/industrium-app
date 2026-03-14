@@ -24,7 +24,8 @@ export function ComplianceRecordForm({
     setIsPending(true);
     setErrorMessage(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     try {
       const response = await fetch("/api/compliance", {
@@ -48,7 +49,7 @@ export function ComplianceRecordForm({
         throw new Error(payload.error ?? "Unable to save compliance record.");
       }
 
-      event.currentTarget.reset();
+      form.reset();
       router.refresh();
     } catch (error) {
       setErrorMessage(

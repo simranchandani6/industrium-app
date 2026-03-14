@@ -1,10 +1,10 @@
 import { z } from "zod";
 
 export const productPayloadSchema = z.object({
-  productName: z.string().min(3),
-  productSku: z.string().min(3),
-  productCategory: z.string().min(2),
-  description: z.string().min(10),
+  productName: z.string().trim().min(3),
+  productSku: z.string().trim().min(3),
+  productCategory: z.string().trim().min(2),
+  description: z.string().trim().min(10),
   lifecycleStage: z.enum([
     "concept",
     "design",
@@ -14,7 +14,7 @@ export const productPayloadSchema = z.object({
     "launch",
     "sustaining",
   ]),
-  versionCode: z.string().min(2),
+  versionCode: z.string().trim().min(1),
 });
 
 export const componentPayloadSchema = z.object({
@@ -93,8 +93,8 @@ export const projectPayloadSchema = z.object({
 
 export const productVersionPayloadSchema = z.object({
   productId: z.string().uuid(),
-  versionCode: z.string().min(2),
-  summary: z.string().min(10),
+  versionCode: z.string().trim().min(1),
+  summary: z.string().trim().min(10),
   releasedAt: z.string().datetime().nullable().optional(),
   markAsCurrent: z.boolean().default(true),
 });

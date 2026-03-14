@@ -4,34 +4,92 @@ declare
   demo_email constant text := 'simra.chandani@bacancy.com';
   seeded_at constant timestamptz := timezone('utc', now());
 begin
+  delete from auth.sessions
+  where user_id = demo_user_id;
+
+  delete from auth.refresh_tokens
+  where user_id = demo_user_id;
+
+  delete from auth.identities
+  where user_id = demo_user_id
+     or provider_id = demo_email;
+
+  delete from auth.users
+  where id = demo_user_id
+     or email = demo_email;
+
   insert into auth.users (
+    instance_id,
     id,
     aud,
     role,
     email,
     encrypted_password,
     email_confirmed_at,
+    invited_at,
+    confirmation_token,
+    confirmation_sent_at,
+    recovery_token,
+    recovery_sent_at,
+    email_change_token_new,
+    email_change,
+    email_change_sent_at,
+    last_sign_in_at,
     raw_app_meta_data,
     raw_user_meta_data,
+    is_super_admin,
     created_at,
-    updated_at
+    updated_at,
+    phone,
+    phone_confirmed_at,
+    phone_change,
+    phone_change_token,
+    phone_change_sent_at,
+    email_change_token_current,
+    email_change_confirm_status,
+    banned_until,
+    reauthentication_token,
+    reauthentication_sent_at
   )
   values (
+    '00000000-0000-0000-0000-000000000000',
     demo_user_id,
     'authenticated',
     'authenticated',
     demo_email,
     crypt('DemoPass123!', gen_salt('bf')),
     seeded_at,
+    null,
+    '',
+    null,
+    '',
+    null,
+    '',
+    '',
+    null,
+    seeded_at,
     jsonb_build_object('provider', 'email', 'providers', array['email']),
     jsonb_build_object('full_name', 'Simran Chandani'),
+    null,
     seeded_at,
-    seeded_at
+    seeded_at,
+    null,
+    null,
+    '',
+    '',
+    null,
+    '',
+    0,
+    null,
+    '',
+    null
   )
   on conflict (id) do update
-    set email = excluded.email,
+    set instance_id = excluded.instance_id,
+        email = excluded.email,
         encrypted_password = excluded.encrypted_password,
         email_confirmed_at = excluded.email_confirmed_at,
+        last_sign_in_at = excluded.last_sign_in_at,
         raw_app_meta_data = excluded.raw_app_meta_data,
         raw_user_meta_data = excluded.raw_user_meta_data,
         updated_at = excluded.updated_at;

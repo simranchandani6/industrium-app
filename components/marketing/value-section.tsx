@@ -17,11 +17,11 @@ const features = [
     bullets: [
       "Lifecycle stage management (Concept → Launch)",
       "Automatic version tracking with summaries",
-      "Organization-scoped product portfolio",
+      "User-scoped product portfolio",
     ],
-    accent: "from-violet-500 to-purple-600",
-    lightBg: "bg-violet-50",
-    border: "hover:border-violet-300",
+    accent: "from-ink to-teal",
+    lightBg: "bg-accent/10",
+    border: "hover:border-teal/30",
   },
   {
     icon: Layers,
@@ -34,9 +34,9 @@ const features = [
       "Per-component supplier and cost tracking",
       "BOM versioned alongside product releases",
     ],
-    accent: "from-purple-500 to-indigo-600",
-    lightBg: "bg-purple-50",
-    border: "hover:border-purple-300",
+    accent: "from-teal to-ink",
+    lightBg: "bg-teal/10",
+    border: "hover:border-teal/30",
   },
   {
     icon: GitPullRequestArrow,
@@ -49,9 +49,9 @@ const features = [
       "Approval records with approver and timestamp",
       "Linked directly to products for traceability",
     ],
-    accent: "from-indigo-500 to-violet-600",
-    lightBg: "bg-indigo-50",
-    border: "hover:border-indigo-300",
+    accent: "from-ink to-accent",
+    lightBg: "bg-ink/5",
+    border: "hover:border-accent/30",
   },
   {
     icon: Truck,
@@ -64,9 +64,9 @@ const features = [
       "Performance score tracking per vendor",
       "Supplier-to-component linkage in BOM",
     ],
-    accent: "from-fuchsia-500 to-purple-600",
-    lightBg: "bg-fuchsia-50",
-    border: "hover:border-fuchsia-300",
+    accent: "from-accentDark to-accent",
+    lightBg: "bg-accent/10",
+    border: "hover:border-accent/35",
   },
   {
     icon: FileStack,
@@ -79,9 +79,9 @@ const features = [
       "Document version auto-increments on re-upload",
       "Secure signed URLs for file download",
     ],
-    accent: "from-violet-500 to-fuchsia-600",
-    lightBg: "bg-violet-50",
-    border: "hover:border-violet-300",
+    accent: "from-teal to-accent",
+    lightBg: "bg-teal/10",
+    border: "hover:border-teal/30",
   },
   {
     icon: ShieldCheck,
@@ -94,9 +94,9 @@ const features = [
       "Status: Open → Investigating → Resolved → Closed",
       "Product-linked for full traceability",
     ],
-    accent: "from-purple-500 to-pink-600",
-    lightBg: "bg-purple-50",
-    border: "hover:border-purple-300",
+    accent: "from-ink to-accent",
+    lightBg: "bg-ink/5",
+    border: "hover:border-ink/20",
   },
 ];
 
@@ -104,18 +104,18 @@ export function ValueSection() {
   return (
     <section
       id="platform"
-      className="scroll-mt-20 bg-gray-50 py-24 lg:py-32"
+      className="scroll-mt-20 bg-surface py-24 lg:py-32"
     >
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         {/* ── Section header ───────────────────────────────────────── */}
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-widest text-violet-600">
+          <p className="text-sm font-semibold uppercase tracking-widest text-teal">
             Platform capabilities
           </p>
-          <h2 className="mt-3 text-4xl font-semibold tracking-tight text-gray-900 lg:text-5xl">
+          <h2 className="mt-3 text-4xl font-semibold tracking-tight text-ink lg:text-5xl">
             Everything your hardware team needs in one place
           </h2>
-          <p className="mt-5 text-lg leading-8 text-gray-600">
+          <p className="mt-5 text-lg leading-8 text-steel">
             Industrium replaces the spreadsheets, email chains, and shared drives that slow
             hardware teams down — with structured, connected product data.
           </p>
@@ -126,7 +126,7 @@ export function ValueSection() {
           {features.map((feature) => (
             <div
               key={feature.eyebrow}
-              className={`group relative rounded-3xl border border-gray-200 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-violet-500/8 ${feature.border}`}
+              className={`group relative rounded-3xl border border-ink/10 bg-panel p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-ink/10 ${feature.border}`}
             >
               {/* Icon */}
               <div
@@ -136,25 +136,25 @@ export function ValueSection() {
               </div>
 
               {/* Eyebrow */}
-              <p className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-violet-600">
+              <p className="mb-1.5 text-xs font-semibold uppercase tracking-widest text-teal">
                 {feature.eyebrow}
               </p>
 
               {/* Title */}
-              <h3 className="text-lg font-semibold leading-snug text-gray-900">
+              <h3 className="text-lg font-semibold leading-snug text-ink">
                 {feature.title}
               </h3>
 
               {/* Description */}
-              <p className="mt-3 text-sm leading-6 text-gray-600">
+              <p className="mt-3 text-sm leading-6 text-steel">
                 {feature.description}
               </p>
 
               {/* Bullets */}
               <ul className="mt-5 space-y-2">
                 {feature.bullets.map((bullet) => (
-                  <li key={bullet} className="flex items-start gap-2 text-sm text-gray-700">
-                    <span className="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-violet-400" />
+                  <li key={bullet} className="flex items-start gap-2 text-sm text-steel">
+                    <span className="mt-1.5 block h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
                     {bullet}
                   </li>
                 ))}
@@ -165,7 +165,7 @@ export function ValueSection() {
                 className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                 style={{
                   background:
-                    "radial-gradient(300px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(139,92,246,0.04), transparent 60%)",
+                    "radial-gradient(300px circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(13,133,120,0.06), transparent 60%)",
                 }}
               />
             </div>

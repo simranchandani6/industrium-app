@@ -9,7 +9,7 @@ import { MarketingFooter } from "@/components/marketing/footer";
 
 export default function HomePage() {
   return (
-    <div className="bg-white">
+    <div className="bg-surface text-ink">
       <NavBar />
       <HeroSection />
       <ValueSection />

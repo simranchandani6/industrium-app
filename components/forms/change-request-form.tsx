@@ -19,7 +19,8 @@ export function ChangeRequestForm({ products }: ChangeRequestFormProps) {
     setIsPending(true);
     setErrorMessage(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     try {
       const response = await fetch("/api/workflows", {
@@ -39,7 +40,7 @@ export function ChangeRequestForm({ products }: ChangeRequestFormProps) {
         throw new Error(payload.error ?? "Unable to create change request.");
       }
 
-      event.currentTarget.reset();
+      form.reset();
       router.refresh();
     } catch (error) {
       setErrorMessage(

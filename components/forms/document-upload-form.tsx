@@ -22,7 +22,8 @@ export function DocumentUploadForm({ ownerId, products }: DocumentUploadFormProp
     setIsPending(true);
     setErrorMessage(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const file = formData.get("file");
     const productId = String(formData.get("productId"));
     const documentName = String(formData.get("documentName"));
@@ -73,7 +74,7 @@ export function DocumentUploadForm({ ownerId, products }: DocumentUploadFormProp
         throw new Error(payload.error ?? "Unable to save document record.");
       }
 
-      event.currentTarget.reset();
+      form.reset();
       router.refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to upload document.");

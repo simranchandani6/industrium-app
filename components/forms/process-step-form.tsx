@@ -21,7 +21,8 @@ export function ProcessStepForm({
     setIsPending(true);
     setErrorMessage(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     try {
       const response = await fetch("/api/processes", {
@@ -43,7 +44,7 @@ export function ProcessStepForm({
         throw new Error(payload.error ?? "Unable to add process step.");
       }
 
-      event.currentTarget.reset();
+      form.reset();
       router.refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to add process step.");

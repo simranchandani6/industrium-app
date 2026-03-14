@@ -14,9 +14,9 @@ const seededProducts = [
     bomHighlights: ["Ti-6Al-4V Billet", "Fastener Kit", "Surface Treatment", "Inspection Report"],
     openChanges: 1,
     openIssues: 1,
-    accentGradient: "from-violet-500/10 to-purple-500/5",
-    borderHover: "hover:border-violet-300",
-    iconBg: "from-violet-500 to-purple-600",
+    accentGradient: "from-accent/15 to-teal/5",
+    borderHover: "hover:border-teal/30",
+    iconBg: "from-ink to-teal",
     iconLetter: "A",
   },
   {
@@ -31,9 +31,9 @@ const seededProducts = [
     bomHighlights: ["Valve Body Assembly", "Actuator Seal Kit", "Pressure Sensor", "Control Interface Board"],
     openChanges: 1,
     openIssues: 1,
-    accentGradient: "from-indigo-500/10 to-violet-500/5",
-    borderHover: "hover:border-indigo-300",
-    iconBg: "from-indigo-500 to-violet-600",
+    accentGradient: "from-teal/12 to-ink/5",
+    borderHover: "hover:border-teal/30",
+    iconBg: "from-teal to-ink",
     iconLetter: "H",
   },
   {
@@ -48,9 +48,9 @@ const seededProducts = [
     bomHighlights: ["Peristaltic Pump Assembly", "Flow Rate Sensor", "Drive Motor", "Housing Shell"],
     openChanges: 0,
     openIssues: 0,
-    accentGradient: "from-fuchsia-500/10 to-purple-500/5",
-    borderHover: "hover:border-fuchsia-300",
-    iconBg: "from-fuchsia-500 to-purple-600",
+    accentGradient: "from-accent/15 to-ink/5",
+    borderHover: "hover:border-accent/35",
+    iconBg: "from-accentDark to-accent",
     iconLetter: "M",
   },
 ];
@@ -88,19 +88,19 @@ export function ProductsSection() {
       {/* Subtle top border gradient */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-200 to-transparent"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal/30 to-transparent"
       />
 
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         {/* ── Section header ─────────────────────────────────────────── */}
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-widest text-violet-600">
+          <p className="text-sm font-semibold uppercase tracking-widest text-teal">
             Live example data
           </p>
-          <h2 className="mt-3 text-4xl font-semibold tracking-tight text-gray-900 lg:text-5xl">
+          <h2 className="mt-3 text-4xl font-semibold tracking-tight text-ink lg:text-5xl">
             Real hardware programs managed in Industrium
           </h2>
-          <p className="mt-5 text-lg leading-8 text-gray-600">
+          <p className="mt-5 text-lg leading-8 text-steel">
             The platform ships with seeded data from three realistic hardware products — sign in
             and start exploring immediately.
           </p>
@@ -111,7 +111,7 @@ export function ProductsSection() {
           {seededProducts.map((product) => (
             <div
               key={product.sku}
-              className={`group relative rounded-3xl border border-gray-200 bg-white p-7 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-violet-500/10 ${product.borderHover}`}
+              className={`group relative rounded-3xl border border-ink/10 bg-panel p-7 shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-ink/10 ${product.borderHover}`}
             >
               {/* Gradient background on hover */}
               <div
@@ -134,26 +134,26 @@ export function ProductsSection() {
                 </div>
 
                 {/* Name & SKU */}
-                <h3 className="text-lg font-semibold leading-snug text-gray-900">
+                <h3 className="text-lg font-semibold leading-snug text-ink">
                   {product.name}
                 </h3>
-                <p className="mt-1 font-mono text-xs text-gray-400">
+                <p className="mt-1 font-mono text-xs text-steel/70">
                   {product.sku} · {product.category} · {product.version}
                 </p>
 
                 {/* Description */}
-                <p className="mt-4 text-sm leading-6 text-gray-600">{product.description}</p>
+                <p className="mt-4 text-sm leading-6 text-steel">{product.description}</p>
 
                 {/* BOM highlights */}
                 <div className="mt-5">
-                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+                  <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-steel/70">
                     BOM components
                   </p>
                   <div className="flex flex-wrap gap-1.5">
                     {product.bomHighlights.map((comp) => (
                       <span
                         key={comp}
-                        className="rounded-full border border-violet-100 bg-violet-50 px-2.5 py-1 text-[10px] font-medium text-violet-700"
+                        className="rounded-full border border-teal/10 bg-teal/10 px-2.5 py-1 text-[10px] font-medium text-teal"
                       >
                         {comp}
                       </span>
@@ -163,19 +163,19 @@ export function ProductsSection() {
 
                 {/* Stats */}
                 <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-gray-50 px-3 py-2.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                  <div className="rounded-2xl bg-surface px-3 py-2.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-steel/70">
                       Open changes
                     </p>
-                    <p className="mt-1 text-xl font-semibold text-gray-900">
+                    <p className="mt-1 text-xl font-semibold text-ink">
                       {product.openChanges}
                     </p>
                   </div>
-                  <div className="rounded-2xl bg-gray-50 px-3 py-2.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                  <div className="rounded-2xl bg-surface px-3 py-2.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-steel/70">
                       Quality issues
                     </p>
-                    <p className="mt-1 text-xl font-semibold text-gray-900">
+                    <p className="mt-1 text-xl font-semibold text-ink">
                       {product.openIssues}
                     </p>
                   </div>
@@ -187,24 +187,24 @@ export function ProductsSection() {
 
         {/* ── Suppliers strip ───────────────────────────────────────── */}
         <div className="mt-14">
-          <p className="mb-6 text-center text-sm font-semibold uppercase tracking-widest text-gray-400">
+          <p className="mb-6 text-center text-sm font-semibold uppercase tracking-widest text-steel/70">
             Seeded supplier directory
           </p>
           <div className="grid gap-4 sm:grid-cols-3">
             {suppliers.map((supplier) => (
               <div
                 key={supplier.name}
-                className="group flex items-center justify-between rounded-2xl border border-gray-200 bg-white p-5 shadow-sm transition hover:border-violet-200 hover:shadow-md hover:-translate-y-0.5"
+                className="group flex items-center justify-between rounded-2xl border border-ink/10 bg-panel p-5 shadow-sm transition hover:border-teal/20 hover:shadow-md hover:-translate-y-0.5"
               >
                 <div>
-                  <p className="font-semibold text-gray-900">{supplier.name}</p>
-                  <p className="mt-0.5 text-sm text-gray-500">{supplier.country}</p>
+                  <p className="font-semibold text-ink">{supplier.name}</p>
+                  <p className="mt-0.5 text-sm text-steel">{supplier.country}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
                   <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${supplier.statusColor}`}>
                     {supplier.status}
                   </span>
-                  <p className="font-mono text-xs font-semibold text-gray-700">
+                  <p className="font-mono text-xs font-semibold text-steel">
                     Score {supplier.score}
                   </p>
                 </div>
@@ -217,7 +217,7 @@ export function ProductsSection() {
         <div className="mt-10 text-center">
           <Link
             href="/register"
-            className="group inline-flex items-center gap-2 text-sm font-semibold text-violet-600 transition hover:text-violet-800"
+            className="group inline-flex items-center gap-2 text-sm font-semibold text-teal transition hover:text-ink"
           >
             Sign up and explore the full dataset
             <ArrowRight className="size-4 transition group-hover:translate-x-1" />

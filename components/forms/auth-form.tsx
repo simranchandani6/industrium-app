@@ -2,16 +2,32 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 
+import { DEMO_EMAIL, DEMO_PASSWORD, isDemoCredentials } from "@/lib/demo-auth-shared";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 type AuthFormProps = {
   mode: "login" | "register";
 };
 
+function getAuthErrorMessage(error: unknown) {
+  const fallback = "Authentication failed.";
+
+  if (!(error instanceof Error)) {
+    return fallback;
+  }
+
+  if (/Database error querying schema|Database error finding users/i.test(error.message)) {
+    return "Supabase Auth is misconfigured for this project. Run the demo auth repair SQL, then try signing in again.";
+  }
+
+  return error.message || fallback;
+}
+
 export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -22,7 +38,9 @@ export function AuthForm({ mode }: AuthFormProps) {
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    formRef.current = form;
+    const formData = new FormData(form);
     const email = String(formData.get("email") ?? "").trim();
     const password = String(formData.get("password") ?? "");
     const fullName = String(formData.get("fullName") ?? "").trim();
@@ -47,7 +65,7 @@ export function AuthForm({ mode }: AuthFormProps) {
 
         if (!data.session) {
           setSuccessMessage("Account created. Check your email to confirm your address, then sign in.");
-          event.currentTarget.reset();
+          formRef.current?.reset();
           return;
         }
       } else {
@@ -57,6 +75,22 @@ export function AuthForm({ mode }: AuthFormProps) {
         });
 
         if (error) {
+          if (isDemoCredentials(email, password)) {
+            const demoResponse = await fetch("/api/auth/demo-login", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ email, password }),
+            });
+
+            if (demoResponse.ok) {
+              router.replace("/dashboard");
+              router.refresh();
+              return;
+            }
+          }
+
           throw error;
         }
       }
@@ -64,14 +98,14 @@ export function AuthForm({ mode }: AuthFormProps) {
       router.replace("/dashboard");
       router.refresh();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Authentication failed.");
+      setErrorMessage(getAuthErrorMessage(error));
     } finally {
       setIsPending(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-4">
       {mode === "register" ? (
         <label className="block">
           <span className="mb-2 block text-sm text-steel">Full name</span>
@@ -107,6 +141,13 @@ export function AuthForm({ mode }: AuthFormProps) {
           placeholder="Minimum 8 characters"
         />
       </label>
+
+      {mode === "login" ? (
+        <p className="text-xs text-steel">
+          Demo login: <span className="font-medium text-ink">{DEMO_EMAIL}</span> /{" "}
+          <span className="font-medium text-ink">{DEMO_PASSWORD}</span>
+        </p>
+      ) : null}
 
       {errorMessage ? <p className="text-sm text-signal">{errorMessage}</p> : null}
       {successMessage ? <p className="text-sm text-teal">{successMessage}</p> : null}

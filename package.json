@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "verify:data": "tsx scripts/verify-data.ts"
+    "verify:data": "tsx scripts/verify-data.ts",
+    "seed:demo-auth": "tsx scripts/seed-demo-auth.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",

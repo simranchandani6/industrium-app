@@ -15,7 +15,8 @@ export function SupplierForm() {
     setIsPending(true);
     setErrorMessage(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     try {
       const response = await fetch("/api/suppliers", {
@@ -37,7 +38,7 @@ export function SupplierForm() {
         throw new Error(payload.error ?? "Unable to create supplier.");
       }
 
-      event.currentTarget.reset();
+      form.reset();
       router.refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to create supplier.");

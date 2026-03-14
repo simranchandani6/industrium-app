@@ -1,5 +1,6 @@
 import type { User } from "@supabase/supabase-js";
 
+import { readDemoSessionCookie } from "@/lib/demo-auth";
 import {
   createSupabaseAdminClient,
   isSupabaseConfigured,
@@ -56,6 +57,59 @@ async function ensureUserProfile(user: User): Promise<UserProfile> {
   }
 }
 
+function buildDemoUser(profile: UserProfile): User {
+  const timestamp = new Date().toISOString();
+
+  return {
+    id: profile.id,
+    app_metadata: {
+      provider: "demo",
+      providers: ["demo"],
+    },
+    user_metadata: {
+      full_name: profile.full_name,
+    },
+    aud: "authenticated",
+    confirmation_sent_at: timestamp,
+    confirmed_at: timestamp,
+    created_at: profile.created_at,
+    email: profile.email,
+    email_confirmed_at: timestamp,
+    factors: [],
+    identities: [],
+    is_anonymous: false,
+    last_sign_in_at: timestamp,
+    phone: "",
+    role: "authenticated",
+    updated_at: profile.updated_at,
+  } as User;
+}
+
+async function getDemoSessionContext(): Promise<SessionContext | null> {
+  const demoSession = await readDemoSessionCookie();
+
+  if (!demoSession) {
+    return null;
+  }
+
+  const admin = createSupabaseAdminClient();
+  const { data: profile, error } = await admin
+    .from("users")
+    .select("*")
+    .eq("id", demoSession.userId)
+    .maybeSingle();
+
+  if (error || !profile) {
+    return null;
+  }
+
+  return {
+    supabase: admin as unknown as SupabaseServerClient,
+    user: buildDemoUser(profile as UserProfile),
+    profile: profile as UserProfile,
+  };
+}
+
 export async function getSessionContext(): Promise<SessionContext | null> {
   if (!isSupabaseConfigured()) {
     return null;
@@ -68,7 +122,7 @@ export async function getSessionContext(): Promise<SessionContext | null> {
   } = await supabase.auth.getUser();
 
   if (userError || !user) {
-    return null;
+    return getDemoSessionContext();
   }
 
   const { data: profile, error: profileError } = await supabase

@@ -17,10 +17,27 @@ export function SignOutButton() {
 
     try {
       const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signOut();
+      const [supabaseResult, demoResult] = await Promise.allSettled([
+        supabase.auth.signOut(),
+        fetch("/api/auth/demo-logout", {
+          method: "POST",
+        }),
+      ]);
 
-      if (error) {
-        throw error;
+      if (supabaseResult.status === "rejected") {
+        throw supabaseResult.reason;
+      }
+
+      if (supabaseResult.value.error) {
+        throw supabaseResult.value.error;
+      }
+
+      if (demoResult.status === "rejected") {
+        throw demoResult.reason;
+      }
+
+      if (!demoResult.value.ok) {
+        throw new Error("Unable to clear the local demo session.");
       }
 
       router.push("/login");
@@ -47,4 +64,3 @@ export function SignOutButton() {
     </div>
   );
 }
-

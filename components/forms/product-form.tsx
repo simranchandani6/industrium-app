@@ -1,12 +1,13 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useRef, useState } from "react";
 
 import { lifecycleStageOptions } from "@/lib/constants";
 
 export function ProductForm() {
   const router = useRouter();
+  const formRef = useRef<HTMLFormElement | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -15,7 +16,9 @@ export function ProductForm() {
     setIsPending(true);
     setErrorMessage(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    formRef.current = form;
+    const formData = new FormData(form);
 
     try {
       const response = await fetch("/api/products", {
@@ -34,11 +37,18 @@ export function ProductForm() {
       });
 
       if (!response.ok) {
-        const payload = (await response.json()) as { error?: string };
+        const responseText = await response.text();
+        const payload = (() => {
+          try {
+            return JSON.parse(responseText) as { error?: string };
+          } catch {
+            return { error: responseText || "Unable to create product." };
+          }
+        })();
         throw new Error(payload.error ?? "Unable to create product.");
       }
 
-      event.currentTarget.reset();
+      formRef.current?.reset();
       router.refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to create product.");
@@ -48,7 +58,7 @@ export function ProductForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="grid gap-4 lg:grid-cols-2">
+    <form ref={formRef} onSubmit={handleSubmit} className="grid gap-4 lg:grid-cols-2">
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Product name</span>
         <input
@@ -82,7 +92,7 @@ export function ProductForm() {
           required
           name="versionCode"
           className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
-          placeholder="v1.0"
+          placeholder="v1.0 or 1"
         />
       </label>
       <label className="block lg:col-span-2">

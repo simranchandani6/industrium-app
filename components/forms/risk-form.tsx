@@ -19,7 +19,8 @@ export function RiskForm({ productId }: RiskFormProps) {
     setIsPending(true);
     setErrorMessage(null);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
 
     try {
       const response = await fetch("/api/risks", {
@@ -43,7 +44,7 @@ export function RiskForm({ productId }: RiskFormProps) {
         throw new Error(payload.error ?? "Unable to create risk entry.");
       }
 
-      event.currentTarget.reset();
+      form.reset();
       router.refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Unable to create risk entry.");

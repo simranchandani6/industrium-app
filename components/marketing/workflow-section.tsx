@@ -6,8 +6,8 @@ const stages = [
     description:
       "Capture the product idea, target market, and technical requirements. Log the initial specification and kick off the program.",
     icon: "💡",
-    color: "from-violet-500 to-violet-600",
-    lightColor: "bg-violet-50 text-violet-700 border-violet-200",
+    color: "from-ink to-teal",
+    lightColor: "bg-ink/5 text-ink border-ink/10",
   },
   {
     number: "02",
@@ -16,8 +16,8 @@ const stages = [
     description:
       "Develop schematics, define the initial BOM structure, and create CAD layouts. Upload design artifacts for team review.",
     icon: "✏️",
-    color: "from-purple-500 to-purple-600",
-    lightColor: "bg-purple-50 text-purple-700 border-purple-200",
+    color: "from-teal to-accentDark",
+    lightColor: "bg-teal/10 text-teal border-teal/20",
   },
   {
     number: "03",
@@ -26,8 +26,8 @@ const stages = [
     description:
       "Assemble the first hardware prototype. Test component fit, electrical performance, and firmware integration.",
     icon: "🔧",
-    color: "from-fuchsia-500 to-fuchsia-600",
-    lightColor: "bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200",
+    color: "from-accentDark to-accent",
+    lightColor: "bg-accent/10 text-accentDark border-accent/20",
   },
   {
     number: "04",
@@ -36,8 +36,8 @@ const stages = [
     description:
       "Run EMC, thermal, drop, and functional tests. Log quality findings and raise change requests for identified issues.",
     icon: "🧪",
-    color: "from-indigo-500 to-indigo-600",
-    lightColor: "bg-indigo-50 text-indigo-700 border-indigo-200",
+    color: "from-ink to-accent",
+    lightColor: "bg-ink/5 text-ink border-ink/10",
   },
   {
     number: "05",
@@ -46,8 +46,8 @@ const stages = [
     description:
       "Hand off finalized BOM to manufacturing partners. Manage supplier relationships and coordinate build readiness.",
     icon: "🏭",
-    color: "from-blue-500 to-blue-600",
-    lightColor: "bg-blue-50 text-blue-700 border-blue-200",
+    color: "from-teal to-ink",
+    lightColor: "bg-teal/10 text-teal border-teal/20",
   },
   {
     number: "06",
@@ -72,20 +72,20 @@ export function WorkflowSection() {
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"
       >
-        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet-200 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-violet-200 to-transparent" />
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-teal/30 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-teal/30 to-transparent" />
       </div>
 
       <div className="mx-auto max-w-7xl px-4 lg:px-8">
         {/* ── Section header ─────────────────────────────────────────── */}
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-semibold uppercase tracking-widest text-violet-600">
+          <p className="text-sm font-semibold uppercase tracking-widest text-teal">
             Product lifecycle
           </p>
-          <h2 className="mt-3 text-4xl font-semibold tracking-tight text-gray-900 lg:text-5xl">
+          <h2 className="mt-3 text-4xl font-semibold tracking-tight text-ink lg:text-5xl">
             How hardware products move from idea to market
           </h2>
-          <p className="mt-5 text-lg leading-8 text-gray-600">
+          <p className="mt-5 text-lg leading-8 text-steel">
             Industrium tracks every stage with structured data — so nothing gets
             lost between design reviews, supplier negotiations, and test cycles.
           </p>
@@ -96,7 +96,7 @@ export function WorkflowSection() {
           {/* Horizontal connector line (desktop) */}
           <div
             aria-hidden
-            className="absolute left-0 right-0 top-[52px] hidden h-0.5 bg-gradient-to-r from-violet-200 via-indigo-200 to-teal-200 lg:block"
+            className="absolute left-0 right-0 top-[52px] hidden h-0.5 bg-gradient-to-r from-accent/30 via-teal/30 to-ink/20 lg:block"
           />
 
           {/* Stage grid */}
@@ -121,16 +121,16 @@ export function WorkflowSection() {
                 </span>
 
                 {/* Stage content */}
-                <h3 className="mt-3 text-sm font-semibold text-gray-900">
+                <h3 className="mt-3 text-sm font-semibold text-ink">
                   {stage.title}
                 </h3>
-                <p className="mt-2 text-xs leading-5 text-gray-500">
+                <p className="mt-2 text-xs leading-5 text-steel">
                   {stage.description}
                 </p>
 
                 {/* Arrow connector (mobile) */}
                 {index < stages.length - 1 && (
-                  <div className="mt-4 flex justify-center text-gray-300 lg:hidden">
+                  <div className="mt-4 flex justify-center text-steel/40 lg:hidden">
                     <svg
                       className="h-6 w-6"
                       fill="none"
@@ -152,8 +152,8 @@ export function WorkflowSection() {
         </div>
 
         {/* ── Bottom callout ────────────────────────────────────────── */}
-        <div className="mt-16 rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 to-purple-50 p-8 text-center shadow-sm">
-          <p className="text-sm font-medium text-violet-700">
+        <div className="mt-16 rounded-3xl border border-teal/15 bg-[linear-gradient(135deg,rgba(13,133,120,0.08),rgba(239,177,38,0.12))] p-8 text-center shadow-sm">
+          <p className="text-sm font-medium text-ink">
             Each stage is a structured record in Industrium — with version history, BOM snapshots,
             documents, change requests, and quality findings attached.
           </p>
@@ -161,7 +161,7 @@ export function WorkflowSection() {
             {["Versioned products", "BOM snapshots", "ECN history", "Quality log", "Supplier data"].map((tag) => (
               <span
                 key={tag}
-                className="rounded-full border border-violet-200 bg-white px-3 py-1 text-xs font-medium text-violet-700"
+                className="rounded-full border border-ink/10 bg-panel px-3 py-1 text-xs font-medium text-teal"
               >
                 {tag}
               </span>

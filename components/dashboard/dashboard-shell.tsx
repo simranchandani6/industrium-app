@@ -70,7 +70,7 @@ export function DashboardShell({
           <div className="mt-8">{signOutButton}</div>
         </aside>
 
-        <main className="overflow-hidden rounded-[32px] border border-ink/10 bg-[radial-gradient(circle_at_top_left,rgba(13,133,120,0.15),transparent_35%),linear-gradient(180deg,#fffdf8_0%,#f6f3ec_100%)] p-5 shadow-panel lg:p-8">
+        <main className="overflow-visible rounded-[32px] border border-ink/10 bg-[radial-gradient(circle_at_top_left,rgba(13,133,120,0.15),transparent_35%),linear-gradient(180deg,#fffdf8_0%,#f6f3ec_100%)] p-5 shadow-panel lg:p-8">
           {children}
         </main>
       </div>

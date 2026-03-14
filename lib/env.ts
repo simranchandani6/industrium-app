@@ -14,8 +14,22 @@ export type EnvironmentStatus = {
   missingKeys: string[];
 };
 
+function getPublicEnvironmentInput() {
+  return {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  };
+}
+
+function getServerEnvironmentInput() {
+  return {
+    ...getPublicEnvironmentInput(),
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  };
+}
+
 export function getPublicEnvironmentStatus(): EnvironmentStatus {
-  const result = publicEnvironmentSchema.safeParse(process.env);
+  const result = publicEnvironmentSchema.safeParse(getPublicEnvironmentInput());
 
   if (result.success) {
     return {
@@ -31,7 +45,7 @@ export function getPublicEnvironmentStatus(): EnvironmentStatus {
 }
 
 export function getServerEnvironmentStatus(): EnvironmentStatus {
-  const result = serverEnvironmentSchema.safeParse(process.env);
+  const result = serverEnvironmentSchema.safeParse(getServerEnvironmentInput());
 
   if (result.success) {
     return {
@@ -47,9 +61,9 @@ export function getServerEnvironmentStatus(): EnvironmentStatus {
 }
 
 export function getRequiredPublicEnvironment() {
-  return publicEnvironmentSchema.parse(process.env);
+  return publicEnvironmentSchema.parse(getPublicEnvironmentInput());
 }
 
 export function getRequiredServerEnvironment() {
-  return serverEnvironmentSchema.parse(process.env);
+  return serverEnvironmentSchema.parse(getServerEnvironmentInput());
 }
