@@ -42,7 +42,9 @@ export default async function DocumentsPage() {
                   </div>
                   <StatusBadge value={document.document_type} />
                 </div>
-                <p className="mt-3 font-mono text-xs text-steel">{document.storage_path}</p>
+                <p className="mt-3 text-sm text-steel">
+                  Secure engineering document stored in the project vault.
+                </p>
                 <div className="mt-4">
                   {document.signedUrl ? (
                     <a

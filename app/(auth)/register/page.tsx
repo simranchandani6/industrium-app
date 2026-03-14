@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { Factory, CheckCircle2 } from "lucide-react";
 
 import { AuthForm } from "@/components/forms/auth-form";
-import { getPublicEnvironmentStatus } from "@/lib/env";
 import { getSessionContext } from "@/lib/data/auth";
 
 const benefits = [
@@ -22,8 +21,6 @@ export default async function RegisterPage() {
   if (sessionContext) {
     redirect("/dashboard");
   }
-
-  const environmentStatus = getPublicEnvironmentStatus();
 
   return (
     <main className="flex min-h-screen">
@@ -45,13 +42,6 @@ export default async function RegisterPage() {
           <p className="mt-2 text-sm leading-6 text-steel">
             Set up your workspace in seconds. No credit card required.
           </p>
-
-          {!environmentStatus.isConfigured && (
-            <p className="mt-4 rounded-2xl border border-signal/25 bg-signal/5 px-4 py-3 text-sm text-signal">
-              Missing environment variables: {environmentStatus.missingKeys.join(", ")}
-            </p>
-          )}
-
           <div className="mt-8">
             <AuthForm mode="register" />
           </div>

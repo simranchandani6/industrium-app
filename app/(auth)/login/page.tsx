@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { Factory, Layers, GitPullRequestArrow, ShieldCheck } from "lucide-react";
 
 import { AuthForm } from "@/components/forms/auth-form";
-import { getPublicEnvironmentStatus } from "@/lib/env";
 import { getSessionContext } from "@/lib/data/auth";
 
 const highlights = [
@@ -34,8 +33,6 @@ export default async function LoginPage() {
   if (sessionContext) {
     redirect("/dashboard");
   }
-
-  const environmentStatus = getPublicEnvironmentStatus();
 
   return (
     <main className="flex min-h-screen">
@@ -95,13 +92,6 @@ export default async function LoginPage() {
           <p className="mt-2 text-sm leading-6 text-steel">
             Sign in to your workspace to continue.
           </p>
-
-          {!environmentStatus.isConfigured && (
-            <p className="mt-4 rounded-2xl border border-signal/25 bg-signal/5 px-4 py-3 text-sm text-signal">
-              Missing environment variables: {environmentStatus.missingKeys.join(", ")}
-            </p>
-          )}
-
           <div className="mt-8">
             <AuthForm mode="login" />
           </div>

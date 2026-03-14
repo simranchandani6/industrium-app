@@ -11,6 +11,18 @@ export function ProductForm() {
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
+  const getFriendlyErrorMessage = (message: string) => {
+    if (/Unauthorized/i.test(message)) {
+      return "Please sign in again and retry.";
+    }
+
+    if (/Supabase|Database|JSON|Unexpected end of JSON input|Cannot read properties/i.test(message)) {
+      return "We could not save the product right now. Please try again.";
+    }
+
+    return message;
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsPending(true);
@@ -51,7 +63,11 @@ export function ProductForm() {
       formRef.current?.reset();
       router.refresh();
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "Unable to create product.");
+      setErrorMessage(
+        error instanceof Error
+          ? getFriendlyErrorMessage(error.message)
+          : "We could not save the product right now. Please try again.",
+      );
     } finally {
       setIsPending(false);
     }

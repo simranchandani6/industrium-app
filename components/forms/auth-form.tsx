@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useRef, useState } from "react";
 
-import { DEMO_EMAIL, DEMO_PASSWORD, isDemoCredentials } from "@/lib/demo-auth-shared";
+import { isDemoCredentials } from "@/lib/demo-auth-shared";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 type AuthFormProps = {
@@ -12,17 +12,21 @@ type AuthFormProps = {
 };
 
 function getAuthErrorMessage(error: unknown) {
-  const fallback = "Authentication failed.";
+  const fallback = "Unable to sign in right now. Please try again.";
 
   if (!(error instanceof Error)) {
     return fallback;
   }
 
-  if (/Database error querying schema|Database error finding users/i.test(error.message)) {
-    return "Supabase Auth is misconfigured for this project. Run the demo auth repair SQL, then try signing in again.";
+  if (/Invalid login credentials/i.test(error.message)) {
+    return "Incorrect email or password.";
   }
 
-  return error.message || fallback;
+  if (/Database error querying schema|Database error finding users/i.test(error.message)) {
+    return fallback;
+  }
+
+  return fallback;
 }
 
 export function AuthForm({ mode }: AuthFormProps) {
@@ -141,13 +145,6 @@ export function AuthForm({ mode }: AuthFormProps) {
           placeholder="Minimum 8 characters"
         />
       </label>
-
-      {mode === "login" ? (
-        <p className="text-xs text-steel">
-          Demo login: <span className="font-medium text-ink">{DEMO_EMAIL}</span> /{" "}
-          <span className="font-medium text-ink">{DEMO_PASSWORD}</span>
-        </p>
-      ) : null}
 
       {errorMessage ? <p className="text-sm text-signal">{errorMessage}</p> : null}
       {successMessage ? <p className="text-sm text-teal">{successMessage}</p> : null}

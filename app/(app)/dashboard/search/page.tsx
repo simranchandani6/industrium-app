@@ -81,7 +81,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             {results.documents.map((document) => (
               <div key={document.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
                 <p className="font-medium text-ink">{document.document_name}</p>
-                <p className="mt-1 text-sm text-steel">{document.storage_path}</p>
+                <p className="mt-1 text-sm text-steel">
+                  {document.document_type.replaceAll("_", " ")} • Version {document.version}
+                </p>
                 <div className="mt-3">
                   <StatusBadge value={document.document_type} />
                 </div>
