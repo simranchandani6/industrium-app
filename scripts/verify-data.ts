@@ -91,7 +91,7 @@ function isRetryableError(error: unknown) {
   return /fetch failed|getaddrinfo|eai_again/i.test(error.message);
 }
 
-async function withRetry<T>(operation: () => Promise<T>, retries = 2): Promise<T> {
+async function withRetry(operation: () => PromiseLike<any>, retries = 2): Promise<any> {
   let attempt = 0;
 
   while (true) {
@@ -122,9 +122,9 @@ function fail(label: string, reason?: string) {
 
 async function countRows(table: string) {
   try {
-    const { count, error } = await withRetry(() =>
-      adminClient.from(table).select("*", { count: "exact", head: true }),
-    );
+    const { count, error } = await adminClient
+      .from(table)
+      .select("*", { count: "exact", head: true });
 
     if (error) {
       return -1;
@@ -209,7 +209,7 @@ async function verifyDemoAuthUser() {
       return;
     }
 
-    const demoUser = listData.users.find((user) => user.email === demoEmail || user.id === demoUserId);
+    const demoUser = listData.users.find((user: any) => user.email === demoEmail || user.id === demoUserId);
 
     if (!demoUser) {
       fail(
@@ -303,7 +303,7 @@ async function verifyBomAndCosting() {
   }
 
   const componentCount = components?.length ?? 0;
-  const costedCount = (components ?? []).filter((component) => component.unit_cost >= 0).length;
+  const costedCount = (components ?? []).filter((component: any) => component.unit_cost >= 0).length;
 
   if (componentCount >= 14 && costedCount === componentCount) {
     pass("BOM components", `${componentCount} components with unit cost`);
@@ -335,15 +335,13 @@ async function verifyWorkflowModules() {
   ];
 
   for (const check of checks) {
-    let query = adminClient
-      .from(check.table)
-      .select("*", { count: "exact", head: true });
+    let query = adminClient.from(check.table).select("*", { count: "exact", head: true });
 
     if (check.userScoped) {
       query = query.eq("user_id", demoUserId);
     }
 
-    const { count, error } = await withRetry(() => query);
+    const { count, error } = await query;
 
     if (error) {
       fail(check.label, error.message);
