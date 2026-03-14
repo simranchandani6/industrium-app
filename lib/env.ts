@@ -1,7 +1,4 @@
 import { z } from "zod";
-import { loadEnvConfig } from "@next/env";
-
-loadEnvConfig(process.cwd());
 
 const publicEnvironmentSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url(),

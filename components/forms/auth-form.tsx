@@ -14,22 +14,24 @@ export function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsPending(true);
     setErrorMessage(null);
+    setSuccessMessage(null);
 
     const formData = new FormData(event.currentTarget);
-    const email = String(formData.get("email"));
-    const password = String(formData.get("password"));
-    const fullName = String(formData.get("fullName") ?? "");
+    const email = String(formData.get("email") ?? "").trim();
+    const password = String(formData.get("password") ?? "");
+    const fullName = String(formData.get("fullName") ?? "").trim();
 
     try {
       const supabase = createSupabaseBrowserClient();
 
       if (mode === "register") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -42,6 +44,12 @@ export function AuthForm({ mode }: AuthFormProps) {
         if (error) {
           throw error;
         }
+
+        if (!data.session) {
+          setSuccessMessage("Account created. Check your email to confirm your address, then sign in.");
+          event.currentTarget.reset();
+          return;
+        }
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -53,7 +61,7 @@ export function AuthForm({ mode }: AuthFormProps) {
         }
       }
 
-      router.push("/dashboard");
+      router.replace("/dashboard");
       router.refresh();
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "Authentication failed.");
@@ -101,6 +109,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       </label>
 
       {errorMessage ? <p className="text-sm text-signal">{errorMessage}</p> : null}
+      {successMessage ? <p className="text-sm text-teal">{successMessage}</p> : null}
 
       <button
         type="submit"
