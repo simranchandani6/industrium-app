@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionContext } from "@/lib/data/auth";
+import { canManage, getSessionContext } from "@/lib/data/auth";
 import { createNotification } from "@/lib/data/notifications";
 import { asRow, fromTable } from "@/lib/data/query-helpers";
 import { getPublicEnvironmentStatus } from "@/lib/env";
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   let query = sessionContext.supabase
     .from("compliance_records")
     .select("*")
-    .eq("user_id", sessionContext.profile.id)
+    .eq("user_id", sessionContext.workspaceOwnerId)
     .order("due_date", { ascending: true, nullsFirst: false });
 
   if (productId) {
@@ -54,6 +54,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  if (!canManage(sessionContext, "manage_compliance")) {
+    return NextResponse.json({ error: "Only Compliance Managers can update compliance records." }, { status: 403 });
+  }
+
   const payload = compliancePayloadSchema.parse(await request.json());
 
   const { data: complianceData, error } = await fromTable(
@@ -61,7 +65,7 @@ export async function POST(request: Request) {
     "compliance_records",
   )
     .insert({
-      user_id: sessionContext.profile.id,
+      user_id: sessionContext.workspaceOwnerId,
       product_id: payload.productId,
       document_id: payload.documentId ?? null,
       compliance_name: payload.complianceName,
@@ -83,7 +87,7 @@ export async function POST(request: Request) {
   }
 
   await createNotification(sessionContext.supabase, {
-    userId: sessionContext.profile.id,
+    userId: sessionContext.workspaceOwnerId,
     productId: payload.productId,
     title: "Compliance register updated",
     message: `${payload.complianceName} is now tracked as ${payload.status.replaceAll("_", " ")}.`,

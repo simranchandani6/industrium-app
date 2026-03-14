@@ -19,6 +19,8 @@ export async function GET() {
     authenticated: Boolean(sessionContext),
     user: sessionContext?.user ?? null,
     profile: sessionContext?.profile ?? null,
+    role: sessionContext?.role ?? null,
+    workspaceOwnerId: sessionContext?.workspaceOwnerId ?? null,
   });
 }
 

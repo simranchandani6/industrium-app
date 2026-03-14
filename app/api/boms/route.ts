@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionContext } from "@/lib/data/auth";
+import { canManage, getSessionContext } from "@/lib/data/auth";
 import { asRow, fromTable } from "@/lib/data/query-helpers";
 import { getBillOfMaterials } from "@/lib/data/products";
 import { getPublicEnvironmentStatus } from "@/lib/env";
@@ -41,6 +41,10 @@ export async function POST(request: Request) {
 
   if (!sessionContext) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  if (!canManage(sessionContext, "manage_products")) {
+    return NextResponse.json({ error: "Only Product Managers can manage BOM components." }, { status: 403 });
   }
 
   const payload = componentPayloadSchema.parse(await request.json());

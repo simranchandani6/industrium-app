@@ -159,6 +159,13 @@ create type public.notification_level as enum (
   'warning'
 );
 
+create type public.user_role as enum (
+  'product_manager',
+  'compliance_manager',
+  'quality_engineer',
+  'supplier_manager'
+);
+
 create or replace function public.set_updated_at()
 returns trigger
 language plpgsql
@@ -173,6 +180,7 @@ create table public.users (
   id uuid primary key,
   email text not null unique,
   full_name text not null,
+  role public.user_role not null default 'product_manager',
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
@@ -488,17 +496,19 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.users (id, email, full_name, created_at, updated_at)
+  insert into public.users (id, email, full_name, role, created_at, updated_at)
   values (
     new.id,
     coalesce(new.email, ''),
     coalesce(nullif(new.raw_user_meta_data ->> 'full_name', ''), 'New User'),
+    coalesce((new.raw_user_meta_data ->> 'role')::public.user_role, 'product_manager'::public.user_role),
     timezone('utc', now()),
     timezone('utc', now())
   )
   on conflict (id) do update
     set email = excluded.email,
         full_name = excluded.full_name,
+        role = excluded.role,
         updated_at = timezone('utc', now());
 
   return new;
@@ -729,23 +739,51 @@ create policy product_documents_delete_own
 
 do $$
 declare
-  demo_user_id constant uuid := 'aaaaaaaa-1111-4111-8111-111111111111';
-  demo_email constant text := 'simra.chandani@bacancy.com';
   seeded_at constant timestamptz := timezone('utc', now());
 begin
   delete from auth.sessions
-  where user_id = demo_user_id;
+  where user_id in (
+    'aaaaaaaa-1111-4111-8111-111111111111',
+    'bbbbbbbb-2222-4222-8222-222222222222',
+    'cccccccc-3333-4333-8333-333333333333',
+    'dddddddd-4444-4444-8444-444444444444'
+  );
 
   delete from auth.refresh_tokens
-  where user_id = demo_user_id;
+  where user_id in (
+    'aaaaaaaa-1111-4111-8111-111111111111',
+    'bbbbbbbb-2222-4222-8222-222222222222',
+    'cccccccc-3333-4333-8333-333333333333',
+    'dddddddd-4444-4444-8444-444444444444'
+  );
 
   delete from auth.identities
-  where user_id = demo_user_id
-     or provider_id = demo_email;
+  where user_id in (
+      'aaaaaaaa-1111-4111-8111-111111111111',
+      'bbbbbbbb-2222-4222-8222-222222222222',
+      'cccccccc-3333-4333-8333-333333333333',
+      'dddddddd-4444-4444-8444-444444444444'
+    )
+     or provider_id in (
+      'simra.chandani@bacancy.com',
+      'compliance@industrium.io',
+      'quality@industrium.io',
+      'suppliers@industrium.io'
+    );
 
   delete from auth.users
-  where id = demo_user_id
-     or email = demo_email;
+  where id in (
+      'aaaaaaaa-1111-4111-8111-111111111111',
+      'bbbbbbbb-2222-4222-8222-222222222222',
+      'cccccccc-3333-4333-8333-333333333333',
+      'dddddddd-4444-4444-8444-444444444444'
+    )
+     or email in (
+      'simra.chandani@bacancy.com',
+      'compliance@industrium.io',
+      'quality@industrium.io',
+      'suppliers@industrium.io'
+    );
 
   insert into auth.users (
     instance_id,
@@ -780,39 +818,139 @@ begin
     reauthentication_token,
     reauthentication_sent_at
   )
-  values (
-    '00000000-0000-0000-0000-000000000000',
-    demo_user_id,
-    'authenticated',
-    'authenticated',
-    demo_email,
-    crypt('DemoPass123!', gen_salt('bf')),
-    seeded_at,
-    null,
-    '',
-    null,
-    '',
-    null,
-    '',
-    '',
-    null,
-    seeded_at,
-    jsonb_build_object('provider', 'email', 'providers', array['email']),
-    jsonb_build_object('full_name', 'Simran Chandani'),
-    null,
-    seeded_at,
-    seeded_at,
-    null,
-    null,
-    '',
-    '',
-    null,
-    '',
-    0,
-    null,
-    '',
-    null
-  );
+  values
+    (
+      '00000000-0000-0000-0000-000000000000',
+      'aaaaaaaa-1111-4111-8111-111111111111',
+      'authenticated',
+      'authenticated',
+      'simra.chandani@bacancy.com',
+      crypt('demo123', gen_salt('bf')),
+      seeded_at,
+      null,
+      '',
+      null,
+      '',
+      null,
+      '',
+      '',
+      null,
+      seeded_at,
+      jsonb_build_object('provider', 'email', 'providers', array['email']),
+      jsonb_build_object('full_name', 'Simran Chandani', 'role', 'product_manager'),
+      null,
+      seeded_at,
+      seeded_at,
+      null,
+      null,
+      '',
+      '',
+      null,
+      '',
+      0,
+      null,
+      '',
+      null
+    ),
+    (
+      '00000000-0000-0000-0000-000000000000',
+      'bbbbbbbb-2222-4222-8222-222222222222',
+      'authenticated',
+      'authenticated',
+      'compliance@industrium.io',
+      crypt('demo123', gen_salt('bf')),
+      seeded_at,
+      null,
+      '',
+      null,
+      '',
+      null,
+      '',
+      '',
+      null,
+      seeded_at,
+      jsonb_build_object('provider', 'email', 'providers', array['email']),
+      jsonb_build_object('full_name', 'Avery Compliance', 'role', 'compliance_manager'),
+      null,
+      seeded_at,
+      seeded_at,
+      null,
+      null,
+      '',
+      '',
+      null,
+      '',
+      0,
+      null,
+      '',
+      null
+    ),
+    (
+      '00000000-0000-0000-0000-000000000000',
+      'cccccccc-3333-4333-8333-333333333333',
+      'authenticated',
+      'authenticated',
+      'quality@industrium.io',
+      crypt('demo123', gen_salt('bf')),
+      seeded_at,
+      null,
+      '',
+      null,
+      '',
+      null,
+      '',
+      '',
+      null,
+      seeded_at,
+      jsonb_build_object('provider', 'email', 'providers', array['email']),
+      jsonb_build_object('full_name', 'Jordan Quality', 'role', 'quality_engineer'),
+      null,
+      seeded_at,
+      seeded_at,
+      null,
+      null,
+      '',
+      '',
+      null,
+      '',
+      0,
+      null,
+      '',
+      null
+    ),
+    (
+      '00000000-0000-0000-0000-000000000000',
+      'dddddddd-4444-4444-8444-444444444444',
+      'authenticated',
+      'authenticated',
+      'suppliers@industrium.io',
+      crypt('demo123', gen_salt('bf')),
+      seeded_at,
+      null,
+      '',
+      null,
+      '',
+      null,
+      '',
+      '',
+      null,
+      seeded_at,
+      jsonb_build_object('provider', 'email', 'providers', array['email']),
+      jsonb_build_object('full_name', 'Morgan Supplier', 'role', 'supplier_manager'),
+      null,
+      seeded_at,
+      seeded_at,
+      null,
+      null,
+      '',
+      '',
+      null,
+      '',
+      0,
+      null,
+      '',
+      null
+    );
 
   insert into auth.identities (
     id,
@@ -824,16 +962,59 @@ begin
     updated_at,
     last_sign_in_at
   )
-  values (
-    demo_user_id,
-    demo_user_id,
-    jsonb_build_object('sub', demo_user_id::text, 'email', demo_email),
-    'email',
-    demo_email,
-    seeded_at,
-    seeded_at,
-    seeded_at
-  );
+  values
+    (
+      'aaaaaaaa-1111-4111-8111-111111111111',
+      'aaaaaaaa-1111-4111-8111-111111111111',
+      jsonb_build_object('sub', 'aaaaaaaa-1111-4111-8111-111111111111', 'email', 'simra.chandani@bacancy.com'),
+      'email',
+      'simra.chandani@bacancy.com',
+      seeded_at,
+      seeded_at,
+      seeded_at
+    ),
+    (
+      'bbbbbbbb-2222-4222-8222-222222222222',
+      'bbbbbbbb-2222-4222-8222-222222222222',
+      jsonb_build_object('sub', 'bbbbbbbb-2222-4222-8222-222222222222', 'email', 'compliance@industrium.io'),
+      'email',
+      'compliance@industrium.io',
+      seeded_at,
+      seeded_at,
+      seeded_at
+    ),
+    (
+      'cccccccc-3333-4333-8333-333333333333',
+      'cccccccc-3333-4333-8333-333333333333',
+      jsonb_build_object('sub', 'cccccccc-3333-4333-8333-333333333333', 'email', 'quality@industrium.io'),
+      'email',
+      'quality@industrium.io',
+      seeded_at,
+      seeded_at,
+      seeded_at
+    ),
+    (
+      'dddddddd-4444-4444-8444-444444444444',
+      'dddddddd-4444-4444-8444-444444444444',
+      jsonb_build_object('sub', 'dddddddd-4444-4444-8444-444444444444', 'email', 'suppliers@industrium.io'),
+      'email',
+      'suppliers@industrium.io',
+      seeded_at,
+      seeded_at,
+      seeded_at
+    );
+
+  insert into public.users (id, email, full_name, role, created_at, updated_at)
+  values
+    ('aaaaaaaa-1111-4111-8111-111111111111', 'simra.chandani@bacancy.com', 'Simran Chandani', 'product_manager', seeded_at, seeded_at),
+    ('bbbbbbbb-2222-4222-8222-222222222222', 'compliance@industrium.io', 'Avery Compliance', 'compliance_manager', seeded_at, seeded_at),
+    ('cccccccc-3333-4333-8333-333333333333', 'quality@industrium.io', 'Jordan Quality', 'quality_engineer', seeded_at, seeded_at),
+    ('dddddddd-4444-4444-8444-444444444444', 'suppliers@industrium.io', 'Morgan Supplier', 'supplier_manager', seeded_at, seeded_at)
+  on conflict (id) do update
+    set email = excluded.email,
+        full_name = excluded.full_name,
+        role = excluded.role,
+        updated_at = excluded.updated_at;
 end;
 $$;
 

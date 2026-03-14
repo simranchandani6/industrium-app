@@ -1,5 +1,6 @@
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { asRows } from "@/lib/data/query-helpers";
+import { resolveWorkspaceOwnerId } from "@/lib/rbac";
 import type { DocumentWithAccessUrl, UserProfile } from "@/lib/types/plm";
 
 export async function getDocuments(
@@ -7,10 +8,11 @@ export async function getDocuments(
   profile: UserProfile,
   productId?: string,
 ): Promise<DocumentWithAccessUrl[]> {
+  const workspaceOwnerId = resolveWorkspaceOwnerId(profile);
   let query = supabase
     .from("documents")
     .select("*")
-    .eq("user_id", profile.id)
+    .eq("user_id", workspaceOwnerId)
     .order("created_at", { ascending: false });
 
   if (productId) {

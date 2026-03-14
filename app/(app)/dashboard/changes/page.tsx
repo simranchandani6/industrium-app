@@ -1,3 +1,4 @@
+import { AccessNotice } from "@/components/dashboard/access-notice";
 import { Panel } from "@/components/dashboard/panel";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { ChangeRequestForm } from "@/components/forms/change-request-form";
@@ -5,6 +6,7 @@ import { ChangeRequestStatusForm } from "@/components/forms/change-request-statu
 import { getSessionContext } from "@/lib/data/auth";
 import { getChangeRequests } from "@/lib/data/change-requests";
 import { getProducts } from "@/lib/data/products";
+import { hasCapability } from "@/lib/rbac";
 
 export default async function ChangesPage() {
   const sessionContext = await getSessionContext();
@@ -17,11 +19,20 @@ export default async function ChangesPage() {
     getProducts(sessionContext.supabase, sessionContext.profile),
     getChangeRequests(sessionContext.supabase, sessionContext.profile),
   ]);
+  const canManageChanges = hasCapability(sessionContext.role, "manage_products");
 
   return (
     <div className="space-y-6">
       <Panel title="Change request workflow" eyebrow="Engineer → Review → Approval → Implementation">
-        <ChangeRequestForm products={products} />
+        {canManageChanges ? (
+          <ChangeRequestForm products={products} />
+        ) : (
+          <AccessNotice
+            title="Read-only for your role"
+            body="Only the Product Manager can submit or update change requests in this MVP. You can still follow the workflow board below."
+            detail={sessionContext.roleLabel}
+          />
+        )}
       </Panel>
 
       <Panel title="Workflow board" eyebrow="Active requests">
@@ -47,10 +58,14 @@ export default async function ChangesPage() {
                     <span className="text-sm text-steel">Approval:</span>
                     <StatusBadge value={approval?.status ?? "pending"} />
                   </div>
-                  <ChangeRequestStatusForm
-                    changeRequestId={changeRequest.id}
-                    currentStatus={changeRequest.status}
-                  />
+                  {canManageChanges ? (
+                    <ChangeRequestStatusForm
+                      changeRequestId={changeRequest.id}
+                      currentStatus={changeRequest.status}
+                    />
+                  ) : (
+                    <span className="text-sm text-steel">Read only</span>
+                  )}
                 </div>
               </div>
             );
@@ -60,4 +75,3 @@ export default async function ChangesPage() {
     </div>
   );
 }
-

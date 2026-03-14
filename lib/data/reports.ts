@@ -1,4 +1,5 @@
 import { asRows, fromTable } from "@/lib/data/query-helpers";
+import { resolveWorkspaceOwnerId } from "@/lib/rbac";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import type { ReportsSnapshot, UserProfile } from "@/lib/types/plm";
 
@@ -19,10 +20,9 @@ export async function getReportsSnapshot(
   supabase: SupabaseServerClient,
   profile: UserProfile,
 ): Promise<ReportsSnapshot> {
+  const workspaceOwnerId = resolveWorkspaceOwnerId(profile);
   const [
     productsResult,
-    bomsResult,
-    componentsResult,
     documentsResult,
     qualityResult,
     risksResult,
@@ -31,27 +31,17 @@ export async function getReportsSnapshot(
   ] = await Promise.all([
     fromTable(supabase, "products")
       .select("*")
-      .eq("user_id", profile.id)
+      .eq("user_id", workspaceOwnerId)
       .order("updated_at", { ascending: false }),
-    fromTable(supabase, "bill_of_materials").select("*"),
-    fromTable(supabase, "components").select("*"),
-    fromTable(supabase, "documents").select("*").eq("user_id", profile.id),
-    fromTable(supabase, "quality_issues").select("*").eq("user_id", profile.id),
-    fromTable(supabase, "product_risks").select("*").eq("user_id", profile.id),
-    fromTable(supabase, "customer_feedback").select("*").eq("user_id", profile.id),
-    fromTable(supabase, "compliance_records").select("*").eq("user_id", profile.id),
+    fromTable(supabase, "documents").select("*").eq("user_id", workspaceOwnerId),
+    fromTable(supabase, "quality_issues").select("*").eq("user_id", workspaceOwnerId),
+    fromTable(supabase, "product_risks").select("*").eq("user_id", workspaceOwnerId),
+    fromTable(supabase, "customer_feedback").select("*").eq("user_id", workspaceOwnerId),
+    fromTable(supabase, "compliance_records").select("*").eq("user_id", workspaceOwnerId),
   ]);
 
   if (productsResult.error) {
     throw new Error(`Unable to load products report: ${productsResult.error.message}`);
-  }
-
-  if (bomsResult.error) {
-    throw new Error(`Unable to load BOM report: ${bomsResult.error.message}`);
-  }
-
-  if (componentsResult.error) {
-    throw new Error(`Unable to load component report: ${componentsResult.error.message}`);
   }
 
   if (documentsResult.error) {
@@ -75,13 +65,31 @@ export async function getReportsSnapshot(
   }
 
   const products = asRows<"products">(productsResult.data);
-  const boms = asRows<"bill_of_materials">(bomsResult.data);
-  const components = asRows<"components">(componentsResult.data);
   const documents = asRows<"documents">(documentsResult.data);
   const qualityIssues = asRows<"quality_issues">(qualityResult.data);
   const risks = asRows<"product_risks">(risksResult.data);
   const feedback = asRows<"customer_feedback">(feedbackResult.data);
   const compliance = asRows<"compliance_records">(complianceResult.data);
+  const productIds = products.map((product) => product.id);
+  const { data: bomData, error: bomError } = productIds.length
+    ? await fromTable(supabase, "bill_of_materials").select("*").in("product_id", productIds)
+    : { data: [], error: null };
+
+  if (bomError) {
+    throw new Error(`Unable to load BOM report: ${bomError.message}`);
+  }
+
+  const boms = asRows<"bill_of_materials">(bomData);
+  const bomIds = boms.map((bom) => bom.id);
+  const { data: componentData, error: componentError } = bomIds.length
+    ? await fromTable(supabase, "components").select("*").in("bom_id", bomIds)
+    : { data: [], error: null };
+
+  if (componentError) {
+    throw new Error(`Unable to load component report: ${componentError.message}`);
+  }
+
+  const components = asRows<"components">(componentData);
 
   const bomByProductId = new Map<string, string>();
 

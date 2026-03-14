@@ -1,9 +1,11 @@
+import { AccessNotice } from "@/components/dashboard/access-notice";
 import { Panel } from "@/components/dashboard/panel";
 import { DocumentUploadForm } from "@/components/forms/document-upload-form";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { getSessionContext } from "@/lib/data/auth";
 import { getDocuments } from "@/lib/data/documents";
 import { getProducts } from "@/lib/data/products";
+import { hasCapability } from "@/lib/rbac";
 
 export default async function DocumentsPage() {
   const sessionContext = await getSessionContext();
@@ -16,14 +18,23 @@ export default async function DocumentsPage() {
     getProducts(sessionContext.supabase, sessionContext.profile),
     getDocuments(sessionContext.supabase, sessionContext.profile),
   ]);
+  const canUploadDocuments = hasCapability(sessionContext.role, "manage_compliance");
 
   return (
     <div className="space-y-6">
       <Panel title="Document management" eyebrow="Supabase Storage">
-        <DocumentUploadForm
-          ownerId={sessionContext.profile.id}
-          products={products}
-        />
+        {canUploadDocuments ? (
+          <DocumentUploadForm
+            ownerId={sessionContext.workspaceOwnerId}
+            products={products}
+          />
+        ) : (
+          <AccessNotice
+            title="Read-only for your role"
+            body="Only the Compliance Manager can upload regulatory documents in this MVP. You can still open existing files from the shared register."
+            detail={sessionContext.roleLabel}
+          />
+        )}
       </Panel>
 
       <Panel title="Document register" eyebrow="Engineering artifacts">

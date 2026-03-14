@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionContext } from "@/lib/data/auth";
+import { canManage, getSessionContext } from "@/lib/data/auth";
 import { createNotification } from "@/lib/data/notifications";
 import { asRow, fromTable } from "@/lib/data/query-helpers";
 import { getPublicEnvironmentStatus } from "@/lib/env";
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   let query = sessionContext.supabase
     .from("product_risks")
     .select("*")
-    .eq("user_id", sessionContext.profile.id)
+    .eq("user_id", sessionContext.workspaceOwnerId)
     .order("created_at", { ascending: false });
 
   if (productId) {
@@ -54,11 +54,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  if (!canManage(sessionContext, "manage_quality")) {
+    return NextResponse.json({ error: "Only Quality Engineers can manage product risks." }, { status: 403 });
+  }
+
   const payload = riskPayloadSchema.parse(await request.json());
 
   const { data: riskData, error } = await fromTable(sessionContext.supabase, "product_risks")
     .insert({
-      user_id: sessionContext.profile.id,
+      user_id: sessionContext.workspaceOwnerId,
       product_id: payload.productId,
       risk_title: payload.riskTitle,
       description: payload.description,
@@ -79,7 +83,7 @@ export async function POST(request: Request) {
   }
 
   await createNotification(sessionContext.supabase, {
-    userId: sessionContext.profile.id,
+    userId: sessionContext.workspaceOwnerId,
     productId: payload.productId,
     title: "Risk register updated",
     message: `${payload.riskTitle} was added with ${payload.severity} severity.`,

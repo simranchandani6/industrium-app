@@ -1,4 +1,5 @@
 import { fromTable } from "@/lib/data/query-helpers";
+import { resolveWorkspaceOwnerId } from "@/lib/rbac";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import type { NotificationRecord, UserProfile } from "@/lib/types/plm";
 
@@ -7,17 +8,18 @@ export async function getNotifications(
   profile: UserProfile,
   limit = 6,
 ): Promise<{ notifications: NotificationRecord[]; unreadCount: number }> {
+  const workspaceOwnerId = resolveWorkspaceOwnerId(profile);
   const [notificationsResult, unreadCountResult] = await Promise.all([
     supabase
       .from("notifications")
       .select("*")
-      .eq("user_id", profile.id)
+      .eq("user_id", workspaceOwnerId)
       .order("created_at", { ascending: false })
       .limit(limit),
     supabase
       .from("notifications")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", profile.id)
+      .eq("user_id", workspaceOwnerId)
       .eq("is_read", false),
   ]);
 

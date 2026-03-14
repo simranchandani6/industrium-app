@@ -2,56 +2,107 @@ import type { User } from "@supabase/supabase-js";
 
 import { readDemoSessionCookie } from "@/lib/demo-auth";
 import {
+  dashboardFocusByRole,
+  demoAccounts,
+  getDemoAccountByEmail,
+  hasCapability,
+  resolveUserRole,
+  resolveWorkspaceOwnerId,
+  roleLabels,
+  type RoleCapability,
+} from "@/lib/rbac";
+import {
   createSupabaseAdminClient,
   isSupabaseConfigured,
   createSupabaseServerClient,
   type SupabaseServerClient,
 } from "@/lib/supabase/server";
 import type { UserProfile } from "@/lib/types/plm";
+import type { UserRole } from "@/lib/types/database";
 
 export type SessionContext = {
   supabase: SupabaseServerClient;
   user: User;
   profile: UserProfile;
+  role: UserRole;
+  roleLabel: string;
+  workspaceOwnerId: string;
+  dashboardFocus: (typeof dashboardFocusByRole)[UserRole];
 };
 
 function buildProfileFromUser(user: User): UserProfile {
   const timestamp = new Date().toISOString();
+  const role = resolveUserRole({
+    email: user.email,
+    role: typeof user.user_metadata.role === "string" ? user.user_metadata.role : null,
+  });
 
   return {
     id: user.id,
     email: user.email ?? "",
     full_name: (user.user_metadata.full_name as string | undefined) ?? "New User",
+    role,
     created_at: timestamp,
     updated_at: timestamp,
   };
+}
+
+async function upsertUserProfile(profile: UserProfile): Promise<UserProfile> {
+  const admin = createSupabaseAdminClient();
+  const basePayload = {
+    id: profile.id,
+    email: profile.email,
+    full_name: profile.full_name,
+  };
+
+  const withRoleAttempt = await admin
+    .from("users")
+    .upsert(
+      {
+        ...basePayload,
+        role: profile.role,
+      },
+      {
+        onConflict: "id",
+      },
+    )
+    .select("*")
+    .maybeSingle();
+
+  if (!withRoleAttempt.error && withRoleAttempt.data) {
+    const row = withRoleAttempt.data as Partial<UserProfile>;
+    return {
+      ...profile,
+      ...row,
+      role: resolveUserRole({ email: row.email ?? profile.email, role: row.role ?? profile.role }),
+    };
+  }
+
+  const withoutRoleAttempt = await admin
+    .from("users")
+    .upsert(basePayload, {
+      onConflict: "id",
+    })
+    .select("*")
+    .maybeSingle();
+
+  if (!withoutRoleAttempt.error && withoutRoleAttempt.data) {
+    const row = withoutRoleAttempt.data as Partial<UserProfile>;
+    return {
+      ...profile,
+      ...row,
+      role: resolveUserRole({ email: row.email ?? profile.email, role: row.role ?? profile.role }),
+    };
+  }
+
+  return profile;
 }
 
 async function ensureUserProfile(user: User): Promise<UserProfile> {
   const fallbackProfile = buildProfileFromUser(user);
 
   try {
-    const admin = createSupabaseAdminClient();
-    const { data, error } = await admin
-      .from("users")
-      .upsert(
-        {
-          id: fallbackProfile.id,
-          email: fallbackProfile.email,
-          full_name: fallbackProfile.full_name,
-        },
-        {
-          onConflict: "id",
-        },
-      )
-      .select("*")
-      .single();
-
-    if (error || !data) {
-      return fallbackProfile;
-    }
-
-    return data as UserProfile;
+    return await upsertUserProfile(fallbackProfile);
   } catch {
     return fallbackProfile;
   }
@@ -68,6 +119,7 @@ function buildDemoUser(profile: UserProfile): User {
     },
     user_metadata: {
       full_name: profile.full_name,
+      role: profile.role,
     },
     aud: "authenticated",
     confirmation_sent_at: timestamp,
@@ -85,6 +137,32 @@ function buildDemoUser(profile: UserProfile): User {
   } as User;
 }
 
+function enrichSessionContext(
+  supabase: SupabaseServerClient,
+  user: User,
+  profile: UserProfile,
+): SessionContext {
+  const role = resolveUserRole({ email: profile.email, role: profile.role });
+  const workspaceOwnerId = resolveWorkspaceOwnerId({
+    id: profile.id,
+    email: profile.email,
+    role,
+  });
+
+  return {
+    supabase,
+    user,
+    profile: {
+      ...profile,
+      role,
+    },
+    role,
+    roleLabel: roleLabels[role],
+    workspaceOwnerId,
+    dashboardFocus: dashboardFocusByRole[role],
+  };
+}
+
 async function getDemoSessionContext(): Promise<SessionContext | null> {
   const demoSession = await readDemoSessionCookie();
 
@@ -92,22 +170,32 @@ async function getDemoSessionContext(): Promise<SessionContext | null> {
     return null;
   }
 
-  const admin = createSupabaseAdminClient();
-  const { data: profile, error } = await admin
-    .from("users")
-    .select("*")
-    .eq("id", demoSession.userId)
-    .maybeSingle();
-
-  if (error || !profile) {
+  const seededAccount = demoAccounts.find((account) => account.id === demoSession.userId);
+  if (!seededAccount) {
     return null;
   }
 
-  return {
-    supabase: admin as unknown as SupabaseServerClient,
-    user: buildDemoUser(profile as UserProfile),
-    profile: profile as UserProfile,
+  const fallbackProfile: UserProfile = {
+    id: seededAccount.id,
+    email: seededAccount.email,
+    full_name: seededAccount.fullName,
+    role: seededAccount.role,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
   };
+
+  try {
+    const profile = await upsertUserProfile(fallbackProfile);
+    const admin = createSupabaseAdminClient();
+    return enrichSessionContext(admin as unknown as SupabaseServerClient, buildDemoUser(profile), profile);
+  } catch {
+    const admin = createSupabaseAdminClient();
+    return enrichSessionContext(
+      admin as unknown as SupabaseServerClient,
+      buildDemoUser(fallbackProfile),
+      fallbackProfile,
+    );
+  }
 }
 
 export async function getSessionContext(): Promise<SessionContext | null> {
@@ -125,27 +213,48 @@ export async function getSessionContext(): Promise<SessionContext | null> {
     return getDemoSessionContext();
   }
 
-  const { data: profile, error: profileError } = await supabase
+  const { data: profileData, error: profileError } = await supabase
     .from("users")
     .select("*")
     .eq("id", user.id)
     .maybeSingle();
 
-  if (profileError) {
-    return {
-      supabase,
-      user,
-      profile: buildProfileFromUser(user),
-    };
+  const profile = profileError
+    ? buildProfileFromUser(user)
+    : ((profileData as Partial<UserProfile> | null) ?? (await ensureUserProfile(user)));
+
+  const normalizedProfile: UserProfile = {
+    ...buildProfileFromUser(user),
+    ...profile,
+    role: resolveUserRole({ email: profile.email ?? user.email, role: profile.role }),
+  };
+
+  const seededAccount = getDemoAccountByEmail(normalizedProfile.email);
+
+  if (seededAccount) {
+    const admin = createSupabaseAdminClient();
+    const ensuredProfile = await upsertUserProfile({
+      ...normalizedProfile,
+      id: seededAccount.id,
+      email: seededAccount.email,
+      full_name: seededAccount.fullName,
+      role: seededAccount.role,
+    });
+
+    return enrichSessionContext(
+      admin as unknown as SupabaseServerClient,
+      buildDemoUser(ensuredProfile),
+      ensuredProfile,
+    );
   }
 
-  return {
-    supabase,
-    user,
-    profile: profile ?? (await ensureUserProfile(user)),
-  };
+  return enrichSessionContext(supabase, user, normalizedProfile);
 }
 
 export function requireConfiguredSupabase() {
   return isSupabaseConfigured();
+}
+
+export function canManage(sessionContext: SessionContext, capability: RoleCapability) {
+  return hasCapability(sessionContext.role, capability);
 }

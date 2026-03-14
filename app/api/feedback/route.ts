@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionContext } from "@/lib/data/auth";
+import { canManage, getSessionContext } from "@/lib/data/auth";
 import { createNotification } from "@/lib/data/notifications";
 import { asRow, fromTable } from "@/lib/data/query-helpers";
 import { getPublicEnvironmentStatus } from "@/lib/env";
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   let query = sessionContext.supabase
     .from("customer_feedback")
     .select("*")
-    .eq("user_id", sessionContext.profile.id)
+    .eq("user_id", sessionContext.workspaceOwnerId)
     .order("created_at", { ascending: false });
 
   if (productId) {
@@ -54,6 +54,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  if (!canManage(sessionContext, "manage_quality")) {
+    return NextResponse.json({ error: "Only Quality Engineers can log customer feedback." }, { status: 403 });
+  }
+
   const payload = customerFeedbackPayloadSchema.parse(await request.json());
 
   const { data: feedbackData, error } = await fromTable(
@@ -61,7 +65,7 @@ export async function POST(request: Request) {
     "customer_feedback",
   )
     .insert({
-      user_id: sessionContext.profile.id,
+      user_id: sessionContext.workspaceOwnerId,
       product_id: payload.productId,
       customer_name: payload.customerName,
       channel: payload.channel,
@@ -80,7 +84,7 @@ export async function POST(request: Request) {
   }
 
   await createNotification(sessionContext.supabase, {
-    userId: sessionContext.profile.id,
+    userId: sessionContext.workspaceOwnerId,
     productId: payload.productId,
     title: "Customer feedback received",
     message: `${payload.customerName} submitted feedback for this product.`,

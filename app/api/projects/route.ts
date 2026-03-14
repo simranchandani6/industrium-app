@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionContext } from "@/lib/data/auth";
+import { canManage, getSessionContext } from "@/lib/data/auth";
 import { createNotification } from "@/lib/data/notifications";
 import { asRow, fromTable } from "@/lib/data/query-helpers";
 import { getPublicEnvironmentStatus } from "@/lib/env";
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   let query = sessionContext.supabase
     .from("projects")
     .select("*")
-    .eq("user_id", sessionContext.profile.id)
+    .eq("user_id", sessionContext.workspaceOwnerId)
     .order("deadline", { ascending: true, nullsFirst: false });
 
   if (productId) {
@@ -54,11 +54,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  if (!canManage(sessionContext, "manage_products")) {
+    return NextResponse.json({ error: "Only Product Managers can manage roadmap milestones." }, { status: 403 });
+  }
+
   const payload = projectPayloadSchema.parse(await request.json());
 
   const { data: projectData, error } = await fromTable(sessionContext.supabase, "projects")
     .insert({
-      user_id: sessionContext.profile.id,
+      user_id: sessionContext.workspaceOwnerId,
       product_id: payload.productId,
       project_name: payload.projectName,
       deadline: payload.deadline ?? null,
@@ -76,7 +80,7 @@ export async function POST(request: Request) {
   }
 
   await createNotification(sessionContext.supabase, {
-    userId: sessionContext.profile.id,
+    userId: sessionContext.workspaceOwnerId,
     productId: payload.productId,
     title: "New project milestone",
     message: `${payload.projectName} was added to the product timeline.`,

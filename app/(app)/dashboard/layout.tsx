@@ -33,6 +33,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
   return (
     <DashboardShell
       userName={sessionContext.profile.full_name}
+      roleLabel={sessionContext.roleLabel}
       signOutButton={<SignOutButton />}
     >
       {children}

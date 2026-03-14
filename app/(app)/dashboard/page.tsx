@@ -25,25 +25,36 @@ export default async function DashboardPage() {
   }
 
   const snapshot = await getDashboardSnapshot(sessionContext.supabase, sessionContext.profile);
+  const focus = sessionContext.dashboardFocus;
 
   return (
     <div className="space-y-6">
       <section className="grid gap-5 rounded-[30px] bg-ink px-6 py-8 text-white lg:grid-cols-[1.2fr_0.8fr] lg:px-8">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.32em] text-white/60">
-            Portfolio command center
+            {focus.title}
           </p>
           <h1 className="mt-4 text-4xl font-semibold tracking-tight">
             Monitor hardware programs from component structure to launch readiness.
           </h1>
           <p className="mt-4 max-w-3xl text-base leading-7 text-white/72">
-            The dashboard surfaces product activity, open defects, pending engineering changes, and
-            supplier health for the current workspace.
+            {focus.description}
           </p>
         </div>
         <div className="rounded-[28px] border border-white/10 bg-white/5 p-5">
           <p className="text-sm text-white/65">Current operator</p>
           <p className="mt-3 text-2xl font-semibold">{sessionContext.profile.full_name}</p>
+          <p className="mt-2 text-sm text-white/65">Logged in as: {sessionContext.roleLabel}</p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {focus.highlights.map((item) => (
+              <span
+                key={item}
+                className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs uppercase tracking-[0.18em] text-white/70"
+              >
+                {item}
+              </span>
+            ))}
+          </div>
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/dashboard/products"

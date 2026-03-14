@@ -1,6 +1,6 @@
-export const DEMO_EMAIL = "simra.chandani@bacancy.com";
-export const DEMO_PASSWORD = "DemoPass123!";
-
-export function isDemoCredentials(email: string, password: string) {
-  return email.trim().toLowerCase() === DEMO_EMAIL && password === DEMO_PASSWORD;
-}
+export {
+  DEMO_DEFAULT_PASSWORD as DEMO_PASSWORD,
+  demoAccounts,
+  getDemoAccountByEmail,
+  isDemoCredentials,
+} from "@/lib/rbac";

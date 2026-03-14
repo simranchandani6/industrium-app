@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionContext } from "@/lib/data/auth";
+import { canManage, getSessionContext } from "@/lib/data/auth";
 import { asRow, fromTable } from "@/lib/data/query-helpers";
 import { getSuppliers } from "@/lib/data/suppliers";
 import { getPublicEnvironmentStatus } from "@/lib/env";
@@ -37,6 +37,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  if (!canManage(sessionContext, "manage_suppliers")) {
+    return NextResponse.json({ error: "Only Supplier Managers can edit supplier records." }, { status: 403 });
+  }
+
   const payload = supplierPayloadSchema.parse(await request.json());
 
   const { data: supplierData, error } = await fromTable(
@@ -44,7 +48,7 @@ export async function POST(request: Request) {
     "suppliers",
   )
     .insert({
-      user_id: sessionContext.profile.id,
+      user_id: sessionContext.workspaceOwnerId,
       supplier_name: payload.supplierName,
       contact_email: payload.contactEmail,
       country: payload.country,

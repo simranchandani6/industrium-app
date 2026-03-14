@@ -66,6 +66,12 @@ export type FeedbackChannel =
 
 export type NotificationLevel = "info" | "success" | "warning";
 
+export type UserRole =
+  | "product_manager"
+  | "compliance_manager"
+  | "quality_engineer"
+  | "supplier_manager";
+
 type TableDefinition<Row, Insert, Update> = {
   Row: Row;
   Insert: Insert;
@@ -81,6 +87,7 @@ export interface Database {
           id: string;
           email: string;
           full_name: string;
+          role: UserRole;
           created_at: string;
           updated_at: string;
         },
@@ -88,6 +95,7 @@ export interface Database {
           id: string;
           email: string;
           full_name: string;
+          role?: UserRole;
           created_at?: string;
           updated_at?: string;
         },
@@ -95,6 +103,7 @@ export interface Database {
           id?: string;
           email?: string;
           full_name?: string;
+          role?: UserRole;
           created_at?: string;
           updated_at?: string;
         }
@@ -657,6 +666,7 @@ export interface Database {
       risk_status: RiskStatus;
       feedback_channel: FeedbackChannel;
       notification_level: NotificationLevel;
+      user_role: UserRole;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

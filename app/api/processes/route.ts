@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionContext } from "@/lib/data/auth";
+import { canManage, getSessionContext } from "@/lib/data/auth";
 import { createNotification } from "@/lib/data/notifications";
 import { asRow, fromTable } from "@/lib/data/query-helpers";
 import { getPublicEnvironmentStatus } from "@/lib/env";
@@ -52,6 +52,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  if (!canManage(sessionContext, "manage_products")) {
+    return NextResponse.json({ error: "Only Product Managers can edit the manufacturing plan." }, { status: 403 });
+  }
+
   const payload = processStepPayloadSchema.parse(await request.json());
 
   const { data: processStepData, error } = await fromTable(
@@ -77,7 +81,7 @@ export async function POST(request: Request) {
   }
 
   await createNotification(sessionContext.supabase, {
-    userId: sessionContext.profile.id,
+    userId: sessionContext.workspaceOwnerId,
     productId: payload.productId,
     title: "Manufacturing plan updated",
     message: `${payload.stepName} was added to the process plan.`,

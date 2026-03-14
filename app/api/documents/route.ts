@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionContext } from "@/lib/data/auth";
+import { canManage, getSessionContext } from "@/lib/data/auth";
 import { createNotification } from "@/lib/data/notifications";
 import { asRow, fromTable } from "@/lib/data/query-helpers";
 import { getDocuments } from "@/lib/data/documents";
@@ -44,8 +44,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  if (!canManage(sessionContext, "manage_compliance")) {
+    return NextResponse.json({ error: "Only Compliance Managers can upload regulatory documents." }, { status: 403 });
+  }
+
   const payload = documentPayloadSchema.parse(await request.json());
-  const expectedPrefix = `${sessionContext.profile.id}/${payload.productId}/`;
+  const expectedPrefix = `${sessionContext.workspaceOwnerId}/${payload.productId}/`;
 
   if (!payload.storagePath.startsWith(expectedPrefix)) {
     return NextResponse.json(
@@ -56,7 +60,7 @@ export async function POST(request: Request) {
 
   const { data: latestVersionData } = await fromTable(sessionContext.supabase, "documents")
     .select("version")
-    .eq("user_id", sessionContext.profile.id)
+    .eq("user_id", sessionContext.workspaceOwnerId)
     .eq("product_id", payload.productId)
     .eq("document_name", payload.documentName)
     .order("version", { ascending: false })
@@ -68,7 +72,7 @@ export async function POST(request: Request) {
 
   const { data: documentData, error } = await fromTable(sessionContext.supabase, "documents")
     .insert({
-      user_id: sessionContext.profile.id,
+      user_id: sessionContext.workspaceOwnerId,
       product_id: payload.productId,
       document_name: payload.documentName,
       document_type: payload.documentType,
@@ -88,7 +92,7 @@ export async function POST(request: Request) {
   }
 
   await createNotification(sessionContext.supabase, {
-    userId: sessionContext.profile.id,
+    userId: sessionContext.workspaceOwnerId,
     productId: payload.productId,
     title: "Document uploaded",
     message: `${payload.documentName} was stored in the document register.`,

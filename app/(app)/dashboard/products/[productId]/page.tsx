@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 
+import { AccessNotice } from "@/components/dashboard/access-notice";
 import { BomTree } from "@/components/dashboard/bom-tree";
 import { Panel } from "@/components/dashboard/panel";
+import { RevealFormCard } from "@/components/dashboard/reveal-form-card";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { ChangeRequestStatusForm } from "@/components/forms/change-request-status-form";
 import { ComplianceRecordForm } from "@/components/forms/compliance-record-form";
@@ -14,6 +16,7 @@ import { ProjectForm } from "@/components/forms/project-form";
 import { RiskForm } from "@/components/forms/risk-form";
 import { getSessionContext } from "@/lib/data/auth";
 import { getProductDetail } from "@/lib/data/products";
+import { hasCapability } from "@/lib/rbac";
 import { formatCurrency, formatDate } from "@/lib/utils";
 
 type ProductDetailPageProps = {
@@ -44,6 +47,9 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     (accumulator, component) => accumulator + Number(component.quantity) * Number(component.unit_cost),
     0,
   );
+  const canManageProducts = hasCapability(sessionContext.role, "manage_products");
+  const canManageCompliance = hasCapability(sessionContext.role, "manage_compliance");
+  const canManageQuality = hasCapability(sessionContext.role, "manage_quality");
   const detailSections = [
     {
       id: "engineering-build",
@@ -141,10 +147,18 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               Yes — you can move this product from prototype to testing, or any other lifecycle stage.
             </p>
             <div className="mt-4">
-              <ProductLifecycleForm
-                productId={detail.product.id}
-                currentStage={detail.product.lifecycle_stage}
-              />
+              {canManageProducts ? (
+                <ProductLifecycleForm
+                  productId={detail.product.id}
+                  currentStage={detail.product.lifecycle_stage}
+                />
+              ) : (
+                <AccessNotice
+                  title="Read-only stage control"
+                  body="Only the Product Manager can update lifecycle stages in this MVP."
+                  detail={sessionContext.roleLabel}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -174,20 +188,48 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               ))}
             </div>
             <div className="mt-5 border-t border-ink/10 pt-5">
-              <ProductVersionForm productId={detail.product.id} />
+              {canManageProducts ? (
+                <RevealFormCard
+                  title="Add a new version"
+                  description="Keep the version history focused until you need to add the next configuration."
+                  buttonLabel="Add version"
+                >
+                  <ProductVersionForm productId={detail.product.id} />
+                </RevealFormCard>
+              ) : (
+                <AccessNotice
+                  title="Read-only versions"
+                  body="Only the Product Manager can add configuration versions."
+                  detail={sessionContext.roleLabel}
+                />
+              )}
             </div>
           </Panel>
 
           {detail.bom ? (
-            <Panel title="Add BOM component" eyebrow="Component structure">
-              <ComponentForm
-                bomId={detail.bom.id}
-                suppliers={detail.suppliers}
-                parentComponentOptions={detail.components.map((component) => ({
-                  id: component.id,
-                  name: component.component_name,
-                }))}
-              />
+            <Panel title="BOM component updates" eyebrow="Component structure">
+              {canManageProducts ? (
+                <RevealFormCard
+                  title="Add BOM component"
+                  description="Keep the component tree clean until you are ready to insert a new part."
+                  buttonLabel="Add component"
+                >
+                  <ComponentForm
+                    bomId={detail.bom.id}
+                    suppliers={detail.suppliers}
+                    parentComponentOptions={detail.components.map((component) => ({
+                      id: component.id,
+                      name: component.component_name,
+                    }))}
+                  />
+                </RevealFormCard>
+              ) : (
+                <AccessNotice
+                  title="Read-only BOM"
+                  body="Only the Product Manager can add or restructure BOM components."
+                  detail={sessionContext.roleLabel}
+                />
+              )}
             </Panel>
           ) : null}
 
@@ -213,14 +255,28 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               ) : null}
             </div>
             <div className="mt-5 border-t border-ink/10 pt-5">
-              <ProcessStepForm
-                productId={detail.product.id}
-                nextSequenceNumber={
-                  detail.processSteps.length > 0
-                    ? detail.processSteps[detail.processSteps.length - 1]!.sequence_number + 10
-                    : 10
-                }
-              />
+              {canManageProducts ? (
+                <RevealFormCard
+                  title="Add process step"
+                  description="Reveal the process editor only when you want to extend the manufacturing plan."
+                  buttonLabel="Add step"
+                >
+                  <ProcessStepForm
+                    productId={detail.product.id}
+                    nextSequenceNumber={
+                      detail.processSteps.length > 0
+                        ? detail.processSteps[detail.processSteps.length - 1]!.sequence_number + 10
+                        : 10
+                    }
+                  />
+                </RevealFormCard>
+              ) : (
+                <AccessNotice
+                  title="Read-only process plan"
+                  body="Only the Product Manager can update the manufacturing process plan."
+                  detail={sessionContext.roleLabel}
+                />
+              )}
             </div>
           </Panel>
 
@@ -247,7 +303,21 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               ) : null}
             </div>
             <div className="mt-5 border-t border-ink/10 pt-5">
-              <CustomerFeedbackForm productId={detail.product.id} />
+              {canManageQuality ? (
+                <RevealFormCard
+                  title="Add customer feedback"
+                  description="Show the feedback form only when you need to capture a new customer signal."
+                  buttonLabel="Add feedback"
+                >
+                  <CustomerFeedbackForm productId={detail.product.id} />
+                </RevealFormCard>
+              ) : (
+                <AccessNotice
+                  title="Read-only feedback"
+                  body="Only the Quality Engineer can log customer feedback in this MVP."
+                  detail={sessionContext.roleLabel}
+                />
+              )}
             </div>
           </Panel>
 
@@ -307,10 +377,24 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 ) : null}
               </div>
               <div className="mt-5 border-t border-ink/10 pt-5">
-                <ComplianceRecordForm
-                  productId={detail.product.id}
-                  documents={detail.documents}
-                />
+                {canManageCompliance ? (
+                  <RevealFormCard
+                    title="Add compliance record"
+                    description="Open the register form only when you need to log a new regulatory checkpoint."
+                    buttonLabel="Add record"
+                  >
+                    <ComplianceRecordForm
+                      productId={detail.product.id}
+                      documents={detail.documents}
+                    />
+                  </RevealFormCard>
+                ) : (
+                  <AccessNotice
+                    title="Read-only compliance"
+                    body="Only the Compliance Manager can update the compliance register."
+                    detail={sessionContext.roleLabel}
+                  />
+                )}
               </div>
             </Panel>
           </div>
@@ -328,10 +412,14 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                       <StatusBadge value={changeRequest.status} />
                     </div>
                     <div className="mt-4">
-                      <ChangeRequestStatusForm
-                        changeRequestId={changeRequest.id}
-                        currentStatus={changeRequest.status}
-                      />
+                      {canManageProducts ? (
+                        <ChangeRequestStatusForm
+                          changeRequestId={changeRequest.id}
+                          currentStatus={changeRequest.status}
+                        />
+                      ) : (
+                        <span className="text-sm text-steel">Read only</span>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -353,7 +441,21 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 ))}
               </div>
               <div className="mt-5 border-t border-ink/10 pt-5">
-                <ProjectForm productId={detail.product.id} />
+                {canManageProducts ? (
+                  <RevealFormCard
+                    title="Add project milestone"
+                    description="Keep the roadmap section compact until you need to add the next milestone."
+                    buttonLabel="Add milestone"
+                  >
+                    <ProjectForm productId={detail.product.id} />
+                  </RevealFormCard>
+                ) : (
+                  <AccessNotice
+                    title="Read-only roadmap"
+                    body="Only the Product Manager can create project milestones."
+                    detail={sessionContext.roleLabel}
+                  />
+                )}
               </div>
             </Panel>
           </div>
@@ -402,7 +504,21 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
                 ) : null}
               </div>
               <div className="mt-5 border-t border-ink/10 pt-5">
-                <RiskForm productId={detail.product.id} />
+                {canManageQuality ? (
+                  <RevealFormCard
+                    title="Add risk"
+                    description="Open the risk entry form only when a new program risk needs to be captured."
+                    buttonLabel="Add risk"
+                  >
+                    <RiskForm productId={detail.product.id} />
+                  </RevealFormCard>
+                ) : (
+                  <AccessNotice
+                    title="Read-only risks"
+                    body="Only the Quality Engineer can update the risk register."
+                    detail={sessionContext.roleLabel}
+                  />
+                )}
               </div>
             </Panel>
           </div>

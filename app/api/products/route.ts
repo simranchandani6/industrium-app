@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 
-import { getSessionContext } from "@/lib/data/auth";
+import { canManage, getSessionContext } from "@/lib/data/auth";
 import { createNotification } from "@/lib/data/notifications";
 import { asRow, fromTable } from "@/lib/data/query-helpers";
 import { getProducts } from "@/lib/data/products";
@@ -40,6 +40,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
+    if (!canManage(sessionContext, "manage_products")) {
+      return NextResponse.json({ error: "Only Product Managers can edit product records." }, { status: 403 });
+    }
+
     const payload = productPayloadSchema.parse(await request.json());
 
     const { data: productData, error: productError } = await fromTable(
@@ -47,7 +51,7 @@ export async function POST(request: Request) {
       "products",
     )
       .insert({
-        user_id: sessionContext.profile.id,
+        user_id: sessionContext.workspaceOwnerId,
         product_name: payload.productName,
         product_sku: payload.productSku,
         product_category: payload.productCategory,
@@ -115,7 +119,7 @@ export async function POST(request: Request) {
     }
 
     await createNotification(sessionContext.supabase, {
-      userId: sessionContext.profile.id,
+      userId: sessionContext.workspaceOwnerId,
       productId: product.id,
       title: "Product created",
       message: `${payload.productName} is now tracked in the portfolio.`,
@@ -158,6 +162,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
+    if (!canManage(sessionContext, "manage_products")) {
+      return NextResponse.json({ error: "Only Product Managers can update lifecycle stages." }, { status: 403 });
+    }
+
     const payload = productLifecyclePayloadSchema.parse(await request.json());
 
     const { data: productData, error: productError } = await fromTable(
@@ -168,7 +176,7 @@ export async function PATCH(request: Request) {
         lifecycle_stage: payload.lifecycleStage,
       })
       .eq("id", payload.productId)
-      .eq("user_id", sessionContext.profile.id)
+       .eq("user_id", sessionContext.workspaceOwnerId)
       .select("id, product_name, lifecycle_stage")
       .single();
 
@@ -180,7 +188,7 @@ export async function PATCH(request: Request) {
     }
 
     await createNotification(sessionContext.supabase, {
-      userId: sessionContext.profile.id,
+      userId: sessionContext.workspaceOwnerId,
       productId: productData.id,
       title: "Lifecycle stage updated",
       message: `${productData.product_name} moved to ${payload.lifecycleStage}.`,

@@ -1,8 +1,10 @@
+import { AccessNotice } from "@/components/dashboard/access-notice";
 import { Panel } from "@/components/dashboard/panel";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { SupplierForm } from "@/components/forms/supplier-form";
 import { getSessionContext } from "@/lib/data/auth";
 import { getSuppliers } from "@/lib/data/suppliers";
+import { hasCapability } from "@/lib/rbac";
 
 export default async function SuppliersPage() {
   const sessionContext = await getSessionContext();
@@ -12,11 +14,20 @@ export default async function SuppliersPage() {
   }
 
   const suppliers = await getSuppliers(sessionContext.supabase, sessionContext.profile);
+  const canManageSuppliers = hasCapability(sessionContext.role, "manage_suppliers");
 
   return (
     <div className="space-y-6">
       <Panel title="Supplier directory" eyebrow="Vendor management">
-        <SupplierForm />
+        {canManageSuppliers ? (
+          <SupplierForm />
+        ) : (
+          <AccessNotice
+            title="Read-only for your role"
+            body="Only the Supplier Manager can create or update supplier records in this MVP. You can still review the shared supplier base below."
+            detail={sessionContext.roleLabel}
+          />
+        )}
       </Panel>
 
       <Panel title="Approved supplier base" eyebrow="Sourcing">
@@ -41,4 +52,3 @@ export default async function SuppliersPage() {
     </div>
   );
 }
-

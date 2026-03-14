@@ -138,11 +138,11 @@ export function AuthForm({ mode }: AuthFormProps) {
         <span className="mb-2 block text-sm text-steel">Password</span>
         <input
           required
-          minLength={8}
+          minLength={6}
           type="password"
           name="password"
           className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none transition focus:border-teal"
-          placeholder="Minimum 8 characters"
+          placeholder="Minimum 6 characters"
         />
       </label>
 

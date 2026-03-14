@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionContext } from "@/lib/data/auth";
+import { canManage, getSessionContext } from "@/lib/data/auth";
 import { createNotification } from "@/lib/data/notifications";
 import { asRow, fromTable } from "@/lib/data/query-helpers";
 import { getChangeRequests } from "@/lib/data/change-requests";
@@ -41,6 +41,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  if (!canManage(sessionContext, "manage_products")) {
+    return NextResponse.json({ error: "Only Product Managers can manage change requests." }, { status: 403 });
+  }
+
   const payload = changeRequestPayloadSchema.parse(await request.json());
 
   const { data: changeRequestData, error } = await fromTable(
@@ -48,7 +52,7 @@ export async function POST(request: Request) {
     "change_requests",
   )
     .insert({
-      user_id: sessionContext.profile.id,
+      user_id: sessionContext.workspaceOwnerId,
       product_id: payload.productId,
       title: payload.title,
       description: payload.description,
@@ -80,7 +84,7 @@ export async function POST(request: Request) {
   }
 
   await createNotification(sessionContext.supabase, {
-    userId: sessionContext.profile.id,
+    userId: sessionContext.workspaceOwnerId,
     productId: payload.productId,
     title: "Change request submitted",
     message: `${payload.title} entered the workflow board.`,
@@ -104,6 +108,10 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  if (!canManage(sessionContext, "manage_products")) {
+    return NextResponse.json({ error: "Only Product Managers can update change requests." }, { status: 403 });
+  }
+
   const payload = changeRequestStatusPayloadSchema.parse(await request.json());
 
   const { data: changeRequestData, error } = await fromTable(
@@ -113,7 +121,7 @@ export async function PATCH(request: Request) {
     .update({
       status: payload.status,
     })
-    .eq("user_id", sessionContext.profile.id)
+    .eq("user_id", sessionContext.workspaceOwnerId)
     .eq("id", payload.changeRequestId)
     .select("*")
     .single();
@@ -154,7 +162,7 @@ export async function PATCH(request: Request) {
   }
 
   await createNotification(sessionContext.supabase, {
-    userId: sessionContext.profile.id,
+    userId: sessionContext.workspaceOwnerId,
     productId: changeRequest.product_id,
     title: "Change request updated",
     message: `${changeRequest.title} moved to ${payload.status.replaceAll("_", " ")}.`,

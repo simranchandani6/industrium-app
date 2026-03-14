@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionContext } from "@/lib/data/auth";
+import { canManage, getSessionContext } from "@/lib/data/auth";
 import { createNotification } from "@/lib/data/notifications";
 import { asRow, fromTable } from "@/lib/data/query-helpers";
 import { getPublicEnvironmentStatus } from "@/lib/env";
@@ -52,6 +52,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  if (!canManage(sessionContext, "manage_products")) {
+    return NextResponse.json({ error: "Only Product Managers can create product versions." }, { status: 403 });
+  }
+
   const payload = productVersionPayloadSchema.parse(await request.json());
 
   if (payload.markAsCurrent) {
@@ -88,7 +92,7 @@ export async function POST(request: Request) {
       .update({
         current_version_id: version.id,
       })
-      .eq("user_id", sessionContext.profile.id)
+      .eq("user_id", sessionContext.workspaceOwnerId)
       .eq("id", payload.productId);
 
     if (productError) {
@@ -97,7 +101,7 @@ export async function POST(request: Request) {
   }
 
   await createNotification(sessionContext.supabase, {
-    userId: sessionContext.profile.id,
+    userId: sessionContext.workspaceOwnerId,
     productId: payload.productId,
     title: "Configuration version created",
     message: `${payload.versionCode} was added to the product history.`,

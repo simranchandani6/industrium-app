@@ -10,12 +10,14 @@ import { cn } from "@/lib/utils";
 
 type DashboardShellProps = {
   userName: string;
+  roleLabel: string;
   children: ReactNode;
   signOutButton: ReactNode;
 };
 
 export function DashboardShell({
   userName,
+  roleLabel,
   children,
   signOutButton,
 }: DashboardShellProps) {
@@ -40,6 +42,12 @@ export function DashboardShell({
           <div className="mt-10 rounded-[24px] border border-white/10 bg-white/5 p-4">
             <p className="text-sm text-white/70">Industrium PLM</p>
             <p className="mt-3 text-xl font-semibold">{userName}</p>
+            <div className="mt-4 inline-flex rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs uppercase tracking-[0.24em] text-accent">
+              {roleLabel}
+            </div>
+            <p className="mt-3 text-xs uppercase tracking-[0.22em] text-white/50">
+              Shared team workspace
+            </p>
           </div>
 
           <nav className="mt-8 space-y-2">

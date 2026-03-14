@@ -47,7 +47,7 @@ export async function PATCH(request: Request) {
     .update({
       is_read: payload.isRead,
     })
-    .eq("user_id", sessionContext.profile.id)
+    .eq("user_id", sessionContext.workspaceOwnerId)
     .eq("id", payload.notificationId);
 
   if (error) {

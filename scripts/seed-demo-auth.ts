@@ -41,7 +41,7 @@ const serviceRoleKey = process.env["SUPABASE_SERVICE_ROLE_KEY"];
 
 const demoUserId = "aaaaaaaa-1111-4111-8111-111111111111";
 const demoEmail = "simra.chandani@bacancy.com";
-const demoPassword = "DemoPass123!";
+const demoPassword = "demo123";
 const demoFullName = "Simran Chandani";
 
 if (!supabaseUrl || !anonKey || !serviceRoleKey) {

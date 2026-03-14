@@ -1,5 +1,6 @@
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import { asRow, asRows, fromTable } from "@/lib/data/query-helpers";
+import { resolveWorkspaceOwnerId } from "@/lib/rbac";
 import type {
   BillOfMaterialsRecord,
   BomNode,
@@ -19,9 +20,10 @@ export async function getProducts(
   supabase: SupabaseServerClient,
   profile: UserProfile,
 ): Promise<ProductSummary[]> {
+  const workspaceOwnerId = resolveWorkspaceOwnerId(profile);
   const { data: productData, error: productsError } = await fromTable(supabase, "products")
     .select("*")
-    .eq("user_id", profile.id)
+    .eq("user_id", workspaceOwnerId)
     .order("updated_at", { ascending: false });
 
   assertNoError(productsError, "Unable to load products");
@@ -32,7 +34,7 @@ export async function getProducts(
     .map((product) => product.current_version_id)
     .filter((value): value is string => Boolean(value));
 
-  const [versionResult, bomResult, componentResult, changeResult, qualityResult] = await Promise.all([
+  const [versionResult, bomResult, changeResult, qualityResult] = await Promise.all([
     currentVersionIds.length > 0
       ? fromTable(supabase, "product_versions")
           .select("*")
@@ -50,26 +52,33 @@ export async function getProducts(
     productIds.length > 0
       ? fromTable(supabase, "change_requests")
           .select("*")
-          .eq("user_id", profile.id)
+          .eq("user_id", workspaceOwnerId)
       : Promise.resolve({ data: [], error: null }),
     productIds.length > 0
       ? fromTable(supabase, "quality_issues")
           .select("*")
-          .eq("user_id", profile.id)
+          .eq("user_id", workspaceOwnerId)
       : Promise.resolve({ data: [], error: null }),
   ]);
 
   assertNoError(versionResult.error, "Unable to load product versions");
   assertNoError(bomResult.error, "Unable to load bills of materials");
-  assertNoError(componentResult.error, "Unable to load components");
   assertNoError(changeResult.error, "Unable to load change requests");
   assertNoError(qualityResult.error, "Unable to load quality issues");
 
   const versions = asRows<"product_versions">(versionResult.data);
   const boms = asRows<"bill_of_materials">(bomResult.data);
-  const components = asRows<"components">(componentResult.data);
   const changeRequests = asRows<"change_requests">(changeResult.data);
   const qualityIssues = asRows<"quality_issues">(qualityResult.data);
+  const bomIds = boms.map((bom) => bom.id);
+  const { data: componentData, error: componentError } = bomIds.length
+    ? await fromTable(supabase, "components")
+        .select("*")
+        .in("bom_id", bomIds)
+    : { data: [], error: null };
+
+  assertNoError(componentError, "Unable to load components");
+  const components = asRows<"components">(componentData);
 
   const versionsById = new Map(versions.map((version) => [version.id, version]));
   const bomsByProductId = new Map<string, BillOfMaterialsRecord>();
@@ -163,9 +172,10 @@ export async function getProductDetail(
   profile: UserProfile,
   productId: string,
 ): Promise<ProductDetail | null> {
+  const workspaceOwnerId = resolveWorkspaceOwnerId(profile);
   const { data: productData, error: productError } = await fromTable(supabase, "products")
     .select("*")
-    .eq("user_id", profile.id)
+    .eq("user_id", workspaceOwnerId)
     .eq("id", productId)
     .single();
 
@@ -201,16 +211,16 @@ export async function getProductDetail(
       .maybeSingle(),
     fromTable(supabase, "suppliers")
       .select("*")
-      .eq("user_id", profile.id)
+      .eq("user_id", workspaceOwnerId)
       .order("supplier_name"),
     fromTable(supabase, "documents")
       .select("*")
-      .eq("user_id", profile.id)
+      .eq("user_id", workspaceOwnerId)
       .eq("product_id", productId)
       .order("created_at", { ascending: false }),
     fromTable(supabase, "change_requests")
       .select("*")
-      .eq("user_id", profile.id)
+      .eq("user_id", workspaceOwnerId)
       .eq("product_id", productId)
       .order("created_at", { ascending: false }),
     fromTable(supabase, "approvals")
@@ -218,12 +228,12 @@ export async function getProductDetail(
       .order("created_at", { ascending: false }),
     fromTable(supabase, "quality_issues")
       .select("*")
-      .eq("user_id", profile.id)
+      .eq("user_id", workspaceOwnerId)
       .eq("product_id", productId)
       .order("created_at", { ascending: false }),
     fromTable(supabase, "projects")
       .select("*")
-      .eq("user_id", profile.id)
+      .eq("user_id", workspaceOwnerId)
       .eq("product_id", productId)
       .order("deadline"),
     fromTable(supabase, "manufacturing_process_steps")
@@ -232,17 +242,17 @@ export async function getProductDetail(
       .order("sequence_number"),
     fromTable(supabase, "compliance_records")
       .select("*")
-      .eq("user_id", profile.id)
+      .eq("user_id", workspaceOwnerId)
       .eq("product_id", productId)
       .order("due_date", { ascending: true, nullsFirst: false }),
     fromTable(supabase, "product_risks")
       .select("*")
-      .eq("user_id", profile.id)
+      .eq("user_id", workspaceOwnerId)
       .eq("product_id", productId)
       .order("created_at", { ascending: false }),
     fromTable(supabase, "customer_feedback")
       .select("*")
-      .eq("user_id", profile.id)
+      .eq("user_id", workspaceOwnerId)
       .eq("product_id", productId)
       .order("created_at", { ascending: false }),
   ]);
@@ -328,13 +338,26 @@ export async function getBillOfMaterials(
   profile: UserProfile,
   productId?: string,
 ): Promise<{ bom: BillOfMaterialsRecord; tree: BomNode[] }[]> {
+  const workspaceOwnerId = resolveWorkspaceOwnerId(profile);
+  const { data: workspaceProducts, error: workspaceProductsError } = await fromTable(supabase, "products")
+    .select("id")
+    .eq("user_id", workspaceOwnerId)
+    .order("updated_at", { ascending: false });
+
+  assertNoError(workspaceProductsError, "Unable to load workspace products");
+  const workspaceProductIds = asRows<"products">(workspaceProducts).map((product) => product.id);
+  const filteredProductIds = productId ? [productId] : workspaceProductIds;
+
+  if (filteredProductIds.length === 0) {
+    return [];
+  }
+
   const billOfMaterialsQuery = fromTable(supabase, "bill_of_materials")
     .select("*")
+    .in("product_id", filteredProductIds)
     .order("created_at", { ascending: false });
 
-  const { data: billOfMaterials, error: billOfMaterialsError } = productId
-    ? await billOfMaterialsQuery.eq("product_id", productId)
-    : await billOfMaterialsQuery;
+  const { data: billOfMaterials, error: billOfMaterialsError } = await billOfMaterialsQuery;
 
   assertNoError(billOfMaterialsError, "Unable to load bills of materials");
 

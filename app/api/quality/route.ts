@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { getSessionContext } from "@/lib/data/auth";
+import { canManage, getSessionContext } from "@/lib/data/auth";
 import { createNotification } from "@/lib/data/notifications";
 import { asRow, fromTable } from "@/lib/data/query-helpers";
 import { getQualityIssues } from "@/lib/data/quality";
@@ -38,6 +38,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
+  if (!canManage(sessionContext, "manage_quality")) {
+    return NextResponse.json({ error: "Only Quality Engineers can log quality issues." }, { status: 403 });
+  }
+
   const payload = qualityPayloadSchema.parse(await request.json());
 
   const { data: qualityIssueData, error } = await fromTable(
@@ -45,7 +49,7 @@ export async function POST(request: Request) {
     "quality_issues",
   )
     .insert({
-      user_id: sessionContext.profile.id,
+      user_id: sessionContext.workspaceOwnerId,
       product_id: payload.productId,
       issue_title: payload.issueTitle,
       description: payload.description,
@@ -65,7 +69,7 @@ export async function POST(request: Request) {
   }
 
   await createNotification(sessionContext.supabase, {
-    userId: sessionContext.profile.id,
+    userId: sessionContext.workspaceOwnerId,
     productId: payload.productId,
     title: "Quality issue logged",
     message: `${payload.issueTitle} was added with ${payload.severity} severity.`,

@@ -1,4 +1,5 @@
 import { getProducts } from "@/lib/data/products";
+import { resolveWorkspaceOwnerId } from "@/lib/rbac";
 import { getNotifications } from "@/lib/data/notifications";
 import type { SupabaseServerClient } from "@/lib/supabase/server";
 import type { DashboardSnapshot, UserProfile } from "@/lib/types/plm";
@@ -11,6 +12,7 @@ export async function getDashboardSnapshot(
   supabase: SupabaseServerClient,
   profile: UserProfile,
 ): Promise<DashboardSnapshot> {
+  const workspaceOwnerId = resolveWorkspaceOwnerId(profile);
   const [products, notifications, productCountResult, qualityCountResult, changeCountResult, supplierCountResult, riskCountResult, projectsResult, recentChangeRequestsResult, recentQualityIssuesResult] =
     await Promise.all([
       getProducts(supabase, profile),
@@ -18,42 +20,42 @@ export async function getDashboardSnapshot(
       supabase
         .from("products")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", profile.id),
+        .eq("user_id", workspaceOwnerId),
       supabase
         .from("quality_issues")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", profile.id)
+        .eq("user_id", workspaceOwnerId)
         .in("status", ["open", "investigating"]),
       supabase
         .from("change_requests")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", profile.id)
+        .eq("user_id", workspaceOwnerId)
         .in("status", ["submitted", "in_review"]),
       supabase
         .from("suppliers")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", profile.id),
+        .eq("user_id", workspaceOwnerId),
       supabase
         .from("product_risks")
         .select("*", { count: "exact", head: true })
-        .eq("user_id", profile.id)
+        .eq("user_id", workspaceOwnerId)
         .in("status", ["identified", "monitoring"]),
       supabase
         .from("projects")
         .select("*")
-        .eq("user_id", profile.id)
+        .eq("user_id", workspaceOwnerId)
         .order("deadline")
         .limit(4),
       supabase
         .from("change_requests")
         .select("*")
-        .eq("user_id", profile.id)
+        .eq("user_id", workspaceOwnerId)
         .order("created_at", { ascending: false })
         .limit(5),
       supabase
         .from("quality_issues")
         .select("*")
-        .eq("user_id", profile.id)
+        .eq("user_id", workspaceOwnerId)
         .order("created_at", { ascending: false })
         .limit(5),
     ]);

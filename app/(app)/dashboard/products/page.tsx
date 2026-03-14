@@ -1,10 +1,12 @@
 import Link from "next/link";
 
+import { AccessNotice } from "@/components/dashboard/access-notice";
 import { Panel } from "@/components/dashboard/panel";
 import { StatusBadge } from "@/components/dashboard/status-badge";
 import { ProductForm } from "@/components/forms/product-form";
 import { getSessionContext } from "@/lib/data/auth";
 import { getProducts } from "@/lib/data/products";
+import { hasCapability } from "@/lib/rbac";
 
 export default async function ProductsPage() {
   const sessionContext = await getSessionContext();
@@ -14,6 +16,7 @@ export default async function ProductsPage() {
   }
 
   const products = await getProducts(sessionContext.supabase, sessionContext.profile);
+  const canEditProducts = hasCapability(sessionContext.role, "manage_products");
 
   return (
     <div className="space-y-6">
@@ -22,7 +25,15 @@ export default async function ProductsPage() {
         eyebrow="Product lifecycle management"
         actions={<p className="text-sm text-steel">{products.length} tracked products</p>}
       >
-        <ProductForm />
+        {canEditProducts ? (
+          <ProductForm />
+        ) : (
+          <AccessNotice
+            title="Read-only for your role"
+            body="Only the Product Manager can create or edit products in this MVP. You can still review the shared portfolio below."
+            detail={sessionContext.roleLabel}
+          />
+        )}
       </Panel>
 
       <Panel title="Product catalog" eyebrow="Current portfolio">
@@ -74,4 +85,3 @@ export default async function ProductsPage() {
     </div>
   );
 }
-

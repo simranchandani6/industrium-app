@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { DEMO_EMAIL, isDemoCredentials } from "@/lib/demo-auth-shared";
 import { setDemoSessionCookie } from "@/lib/demo-auth";
+import { DEMO_WORKSPACE_OWNER_ID, getDemoAccountByEmail, isDemoCredentials } from "@/lib/rbac";
 import { createSupabaseAdminClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
@@ -20,28 +20,76 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid login credentials." }, { status: 401 });
   }
 
+  const account = getDemoAccountByEmail(email);
+
+  if (!account) {
+    return NextResponse.json({ error: "Demo account is not configured." }, { status: 500 });
+  }
+
   const admin = createSupabaseAdminClient();
-  const { data: profile, error } = await admin
+
+  const upsertWithRole = await admin
     .from("users")
-    .select("id, email, full_name")
-    .eq("email", DEMO_EMAIL)
+    .upsert(
+      {
+        id: account.id,
+        email: account.email,
+        full_name: account.fullName,
+        role: account.role,
+      },
+      { onConflict: "id" },
+    )
+    .select("*")
     .maybeSingle();
 
-  if (error || !profile) {
+  const upsertWithoutRole = !upsertWithRole.error && upsertWithRole.data
+    ? upsertWithRole
+    : await admin
+        .from("users")
+        .upsert(
+          {
+            id: account.id,
+            email: account.email,
+            full_name: account.fullName,
+          },
+          { onConflict: "id" },
+        )
+        .select("*")
+        .maybeSingle();
+
+  if (upsertWithoutRole.error) {
     return NextResponse.json(
-      { error: "Seeded demo profile is missing from public.users." },
+      { error: upsertWithoutRole.error.message || "Unable to create the demo profile." },
       { status: 500 },
     );
   }
 
-  await setDemoSessionCookie(profile.id);
+  const { data: workspaceOwner } = await admin
+    .from("users")
+    .select("id")
+    .eq("id", DEMO_WORKSPACE_OWNER_ID)
+    .maybeSingle();
+
+  if (!workspaceOwner && account.id !== DEMO_WORKSPACE_OWNER_ID) {
+    await admin.from("users").upsert(
+      {
+        id: DEMO_WORKSPACE_OWNER_ID,
+        email: "simra.chandani@bacancy.com",
+        full_name: "Simran Chandani",
+      },
+      { onConflict: "id" },
+    );
+  }
+
+  await setDemoSessionCookie(account.id);
 
   return NextResponse.json({
     ok: true,
     profile: {
-      id: profile.id,
-      email: profile.email,
-      fullName: profile.full_name,
+      id: account.id,
+      email: account.email,
+      fullName: account.fullName,
+      role: account.role,
     },
   });
 }
