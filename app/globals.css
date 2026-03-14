@@ -22,7 +22,7 @@ body {
     radial-gradient(circle at bottom right, rgba(13, 133, 120, 0.16), transparent 24%),
     #f6f3ec;
   color: #16202a;
-  font-family: "Space Grotesk", "Avenir Next", "Segoe UI", sans-serif;
+  font-family: var(--font-sans), "Avenir Next", "Segoe UI", sans-serif;
 }
 
 a {

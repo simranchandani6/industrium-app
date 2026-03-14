@@ -19,17 +19,8 @@ const config: Config = {
         signal: "#ef6c45",
       },
       fontFamily: {
-        sans: [
-          "\"Space Grotesk\"",
-          "\"Avenir Next\"",
-          "\"Segoe UI\"",
-          "sans-serif",
-        ],
-        mono: [
-          "\"IBM Plex Mono\"",
-          "\"SFMono-Regular\"",
-          "monospace",
-        ],
+        sans: ["var(--font-sans)", "Avenir Next", "Segoe UI", "sans-serif"],
+        mono: ["var(--font-mono)", "SFMono-Regular", "monospace"],
       },
       boxShadow: {
         panel: "0 24px 80px rgba(12, 24, 32, 0.08)",
