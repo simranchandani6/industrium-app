@@ -1,4 +1,5 @@
 import type { SupabaseServerClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/types/database";
 import type { SearchResults, UserProfile } from "@/lib/types/plm";
 
 function escapeLike(value: string) {
@@ -22,6 +23,7 @@ export async function searchPlmRecords(
   }
 
   const likeQuery = `%${escapeLike(query)}%`;
+  const normalizedQuery = query.toLowerCase();
 
   const [productsResult, documentsResult, componentsResult] = await Promise.all([
     supabase
@@ -37,11 +39,8 @@ export async function searchPlmRecords(
       .from("documents")
       .select("*")
       .eq("user_id", profile.id)
-      .or(
-        `document_name.ilike.${likeQuery},document_type.ilike.${likeQuery},storage_path.ilike.${likeQuery}`,
-      )
       .order("created_at", { ascending: false })
-      .limit(8),
+      .limit(40),
     supabase
       .from("components")
       .select("*")
@@ -67,7 +66,19 @@ export async function searchPlmRecords(
   return {
     query,
     products: productsResult.data ?? [],
-    documents: documentsResult.data ?? [],
+    documents: ((documentsResult.data ?? []) as DocumentRow[]).filter((document) => {
+      const haystack = [
+        document.document_name,
+        document.document_type,
+        document.storage_path,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(normalizedQuery);
+    }).slice(0, 8),
     components: componentsResult.data ?? [],
   };
 }
+  type DocumentRow = Database["public"]["Tables"]["documents"]["Row"];

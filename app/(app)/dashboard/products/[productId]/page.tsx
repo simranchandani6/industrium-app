@@ -8,6 +8,7 @@ import { ComplianceRecordForm } from "@/components/forms/compliance-record-form"
 import { ComponentForm } from "@/components/forms/component-form";
 import { CustomerFeedbackForm } from "@/components/forms/customer-feedback-form";
 import { ProcessStepForm } from "@/components/forms/process-step-form";
+import { ProductLifecycleForm } from "@/components/forms/product-lifecycle-form";
 import { ProductVersionForm } from "@/components/forms/product-version-form";
 import { ProjectForm } from "@/components/forms/project-form";
 import { RiskForm } from "@/components/forms/risk-form";
@@ -43,10 +44,36 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
     (accumulator, component) => accumulator + Number(component.quantity) * Number(component.unit_cost),
     0,
   );
+  const detailSections = [
+    {
+      id: "engineering-build",
+      title: "Engineering build",
+      description: "BOM, versions, and process planning",
+      meta: `${detail.components.length} components • ${detail.versions.length} versions`,
+    },
+    {
+      id: "documents-compliance",
+      title: "Documents & compliance",
+      description: "Specs, reports, and regulatory evidence",
+      meta: `${detail.documents.length} documents • ${detail.complianceRecords.length} records`,
+    },
+    {
+      id: "execution-flow",
+      title: "Execution flow",
+      description: "Changes, milestones, and delivery movement",
+      meta: `${detail.changeRequests.length} changes • ${detail.projects.length} projects`,
+    },
+    {
+      id: "quality-customer-voice",
+      title: "Quality & customer voice",
+      description: "Issues, risks, and feedback in one view",
+      meta: `${detail.qualityIssues.length} issues • ${detail.risks.length} risks • ${detail.feedback.length} feedback`,
+    },
+  ];
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[30px] bg-white p-6 shadow-panel lg:p-8">
+      <section id="summary" className="scroll-mt-28 rounded-[30px] bg-white p-6 shadow-panel lg:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-teal">
@@ -84,15 +111,52 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             <p className="mt-2 text-lg font-semibold text-ink">{detail.projects.length}</p>
           </div>
         </div>
+
+        <div className="mt-6 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+          <div className="rounded-[24px] border border-ink/10 bg-surface p-4">
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-teal">
+              Explore this product
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              {detailSections.map((section) => (
+                <a
+                  key={section.id}
+                  href={`#${section.id}`}
+                  className="rounded-[22px] border border-ink/10 bg-white p-4 transition hover:-translate-y-0.5 hover:border-teal/35 hover:shadow-md"
+                >
+                  <p className="text-sm font-semibold text-ink">{section.title}</p>
+                  <p className="mt-1 text-sm text-steel">{section.description}</p>
+                  <p className="mt-3 text-xs uppercase tracking-[0.18em] text-teal">{section.meta}</p>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-[24px] border border-ink/10 bg-surface p-4">
+            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-teal">
+              Lifecycle control
+            </p>
+            <h2 className="mt-2 text-lg font-semibold text-ink">Update current stage</h2>
+            <p className="mt-2 text-sm text-steel">
+              Yes — you can move this product from prototype to testing, or any other lifecycle stage.
+            </p>
+            <div className="mt-4">
+              <ProductLifecycleForm
+                productId={detail.product.id}
+                currentStage={detail.product.lifecycle_stage}
+              />
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-6">
-          <Panel title="BOM visualization" eyebrow={detail.bom?.bom_version ?? "No BOM version"}>
+        <div id="engineering-build" className="scroll-mt-28 space-y-6">
+          <Panel id="bom" title="BOM visualization" eyebrow={detail.bom?.bom_version ?? "No BOM version"}>
             <BomTree nodes={detail.bomTree} />
           </Panel>
 
-          <Panel title="Configuration history" eyebrow="Versions">
+          <Panel id="versions" title="Configuration history" eyebrow="Versions">
             <div className="space-y-4">
               {detail.versions.map((version) => (
                 <div key={version.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
@@ -127,7 +191,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             </Panel>
           ) : null}
 
-          <Panel title="Manufacturing process plan" eyebrow="Process planning">
+          <Panel id="process" title="Manufacturing process plan" eyebrow="Process planning">
             <div className="space-y-3">
               {detail.processSteps.map((step) => (
                 <div key={step.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
@@ -160,156 +224,7 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
             </div>
           </Panel>
 
-          <Panel title="Engineering documents" eyebrow="Storage-backed files">
-            <div className="space-y-3">
-              {detail.documents.map((document) => (
-                <div key={document.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-medium text-ink">{document.document_name}</p>
-                      <p className="mt-1 text-sm text-steel">
-                        {document.document_type.replaceAll("_", " ")} • Version {document.version}
-                      </p>
-                    </div>
-                    {document.signedUrl ? (
-                      <a
-                        href={document.signedUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="text-sm font-medium text-teal"
-                      >
-                        Download
-                      </a>
-                    ) : (
-                      <span className="text-sm text-steel">Awaiting upload</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Panel>
-
-          <Panel title="Compliance register" eyebrow="Regulatory tracking">
-            <div className="space-y-3">
-              {detail.complianceRecords.map((record) => (
-                <div key={record.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-ink">{record.compliance_name}</p>
-                      <p className="mt-1 text-sm text-steel">
-                        {record.authority ?? "Authority not specified"} • Due {formatDate(record.due_date)}
-                      </p>
-                    </div>
-                    <StatusBadge value={record.status} />
-                  </div>
-                  {record.notes ? (
-                    <p className="mt-3 text-sm leading-6 text-steel">{record.notes}</p>
-                  ) : null}
-                </div>
-              ))}
-              {detail.complianceRecords.length === 0 ? (
-                <p className="text-sm text-steel">No compliance records linked yet.</p>
-              ) : null}
-            </div>
-            <div className="mt-5 border-t border-ink/10 pt-5">
-              <ComplianceRecordForm
-                productId={detail.product.id}
-                documents={detail.documents}
-              />
-            </div>
-          </Panel>
-        </div>
-
-        <div className="space-y-6">
-          <Panel title="Change requests" eyebrow="Workflow">
-            <div className="space-y-4">
-              {detail.changeRequests.map((changeRequest) => (
-                <div key={changeRequest.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div>
-                      <p className="font-medium text-ink">{changeRequest.title}</p>
-                      <p className="mt-2 text-sm leading-6 text-steel">{changeRequest.description}</p>
-                    </div>
-                    <StatusBadge value={changeRequest.status} />
-                  </div>
-                  <div className="mt-4">
-                    <ChangeRequestStatusForm
-                      changeRequestId={changeRequest.id}
-                      currentStatus={changeRequest.status}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Panel>
-
-          <Panel title="Quality issues" eyebrow="Validation">
-            <div className="space-y-4">
-              {detail.qualityIssues.map((qualityIssue) => (
-                <div key={qualityIssue.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-ink">{qualityIssue.issue_title}</p>
-                      <p className="mt-2 text-sm leading-6 text-steel">{qualityIssue.description}</p>
-                    </div>
-                    <div className="space-x-2">
-                      <StatusBadge value={qualityIssue.severity} />
-                      <StatusBadge value={qualityIssue.status} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Panel>
-
-          <Panel title="Projects" eyebrow="Milestones">
-            <div className="space-y-3">
-              {detail.projects.map((project) => (
-                <div key={project.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-ink">{project.project_name}</p>
-                      <p className="mt-1 text-sm text-steel">{formatDate(project.deadline)}</p>
-                    </div>
-                    <StatusBadge value={project.status} />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-5 border-t border-ink/10 pt-5">
-              <ProjectForm productId={detail.product.id} />
-            </div>
-          </Panel>
-
-          <Panel title="Risk register" eyebrow="Assessment tools">
-            <div className="space-y-3">
-              {detail.risks.map((risk) => (
-                <div key={risk.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-medium text-ink">{risk.risk_title}</p>
-                      <p className="mt-2 text-sm leading-6 text-steel">{risk.description}</p>
-                    </div>
-                    <div className="space-x-2">
-                      <StatusBadge value={risk.severity} />
-                      <StatusBadge value={risk.status} />
-                    </div>
-                  </div>
-                  {risk.mitigation_plan ? (
-                    <p className="mt-3 text-sm text-steel">Mitigation: {risk.mitigation_plan}</p>
-                  ) : null}
-                </div>
-              ))}
-              {detail.risks.length === 0 ? (
-                <p className="text-sm text-steel">No active risks are registered.</p>
-              ) : null}
-            </div>
-            <div className="mt-5 border-t border-ink/10 pt-5">
-              <RiskForm productId={detail.product.id} />
-            </div>
-          </Panel>
-
-          <Panel title="Customer feedback" eyebrow="Voice of customer">
+          <Panel id="feedback" title="Customer feedback" eyebrow="Voice of customer">
             <div className="space-y-3">
               {detail.feedback.map((feedbackItem) => (
                 <div key={feedbackItem.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
@@ -335,6 +250,162 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
               <CustomerFeedbackForm productId={detail.product.id} />
             </div>
           </Panel>
+
+        </div>
+
+        <div className="space-y-6">
+          <div id="documents-compliance" className="scroll-mt-28 space-y-6">
+            <Panel id="documents" title="Engineering documents" eyebrow="Storage-backed files">
+              <div className="space-y-3">
+                {detail.documents.map((document) => (
+                  <div key={document.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-ink">{document.document_name}</p>
+                        <p className="mt-1 text-sm text-steel">
+                          {document.document_type.replaceAll("_", " ")} • Version {document.version}
+                        </p>
+                      </div>
+                      {document.signedUrl ? (
+                        <a
+                          href={document.signedUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm font-medium text-teal"
+                        >
+                          Download
+                        </a>
+                      ) : (
+                        <span className="text-sm text-steel">Awaiting upload</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+
+            <Panel id="compliance" title="Compliance register" eyebrow="Regulatory tracking">
+              <div className="space-y-3">
+                {detail.complianceRecords.map((record) => (
+                  <div key={record.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-ink">{record.compliance_name}</p>
+                        <p className="mt-1 text-sm text-steel">
+                          {record.authority ?? "Authority not specified"} • Due {formatDate(record.due_date)}
+                        </p>
+                      </div>
+                      <StatusBadge value={record.status} />
+                    </div>
+                    {record.notes ? (
+                      <p className="mt-3 text-sm leading-6 text-steel">{record.notes}</p>
+                    ) : null}
+                  </div>
+                ))}
+                {detail.complianceRecords.length === 0 ? (
+                  <p className="text-sm text-steel">No compliance records linked yet.</p>
+                ) : null}
+              </div>
+              <div className="mt-5 border-t border-ink/10 pt-5">
+                <ComplianceRecordForm
+                  productId={detail.product.id}
+                  documents={detail.documents}
+                />
+              </div>
+            </Panel>
+          </div>
+
+          <div id="execution-flow" className="scroll-mt-28 space-y-6">
+            <Panel id="changes" title="Change requests" eyebrow="Workflow">
+              <div className="space-y-4">
+                {detail.changeRequests.map((changeRequest) => (
+                  <div key={changeRequest.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div>
+                        <p className="font-medium text-ink">{changeRequest.title}</p>
+                        <p className="mt-2 text-sm leading-6 text-steel">{changeRequest.description}</p>
+                      </div>
+                      <StatusBadge value={changeRequest.status} />
+                    </div>
+                    <div className="mt-4">
+                      <ChangeRequestStatusForm
+                        changeRequestId={changeRequest.id}
+                        currentStatus={changeRequest.status}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+
+            <Panel id="projects" title="Projects" eyebrow="Milestones">
+              <div className="space-y-3">
+                {detail.projects.map((project) => (
+                  <div key={project.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-ink">{project.project_name}</p>
+                        <p className="mt-1 text-sm text-steel">{formatDate(project.deadline)}</p>
+                      </div>
+                      <StatusBadge value={project.status} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-5 border-t border-ink/10 pt-5">
+                <ProjectForm productId={detail.product.id} />
+              </div>
+            </Panel>
+          </div>
+
+          <div id="quality-customer-voice" className="scroll-mt-28 space-y-6">
+            <Panel id="quality" title="Quality issues" eyebrow="Validation">
+              <div className="space-y-4">
+                {detail.qualityIssues.map((qualityIssue) => (
+                  <div key={qualityIssue.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-ink">{qualityIssue.issue_title}</p>
+                        <p className="mt-2 text-sm leading-6 text-steel">{qualityIssue.description}</p>
+                      </div>
+                      <div className="space-x-2">
+                        <StatusBadge value={qualityIssue.severity} />
+                        <StatusBadge value={qualityIssue.status} />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Panel>
+
+            <Panel id="risks" title="Risk register" eyebrow="Assessment tools">
+              <div className="space-y-3">
+                {detail.risks.map((risk) => (
+                  <div key={risk.id} className="rounded-[22px] border border-ink/10 bg-white p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-medium text-ink">{risk.risk_title}</p>
+                        <p className="mt-2 text-sm leading-6 text-steel">{risk.description}</p>
+                      </div>
+                      <div className="space-x-2">
+                        <StatusBadge value={risk.severity} />
+                        <StatusBadge value={risk.status} />
+                      </div>
+                    </div>
+                    {risk.mitigation_plan ? (
+                      <p className="mt-3 text-sm text-steel">Mitigation: {risk.mitigation_plan}</p>
+                    ) : null}
+                  </div>
+                ))}
+                {detail.risks.length === 0 ? (
+                  <p className="text-sm text-steel">No active risks are registered.</p>
+                ) : null}
+              </div>
+              <div className="mt-5 border-t border-ink/10 pt-5">
+                <RiskForm productId={detail.product.id} />
+              </div>
+            </Panel>
+          </div>
         </div>
       </section>
     </div>

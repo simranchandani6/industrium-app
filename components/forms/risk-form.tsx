@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { UiSelect } from "@/components/forms/ui-select";
 import { qualitySeverityOptions, riskStatusOptions } from "@/lib/constants";
 
 type RiskFormProps = {
@@ -66,31 +67,19 @@ export function RiskForm({ productId }: RiskFormProps) {
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Severity</span>
-        <select
+        <UiSelect
           name="severity"
           defaultValue="medium"
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
-        >
-          {qualitySeverityOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={qualitySeverityOptions}
+        />
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Status</span>
-        <select
+        <UiSelect
           name="status"
           defaultValue="identified"
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
-        >
-          {riskStatusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={riskStatusOptions}
+        />
       </label>
       <label className="block lg:col-span-2">
         <span className="mb-2 block text-sm text-steel">Description</span>

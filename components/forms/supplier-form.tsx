@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { UiSelect } from "@/components/forms/ui-select";
 import { supplierStatusOptions } from "@/lib/constants";
 
 export function SupplierForm() {
@@ -79,17 +80,11 @@ export function SupplierForm() {
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Status</span>
-        <select
+        <UiSelect
           name="status"
           defaultValue="active"
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
-        >
-          {supplierStatusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={supplierStatusOptions}
+        />
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Performance score</span>

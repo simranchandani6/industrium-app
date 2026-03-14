@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { UiSelect } from "@/components/forms/ui-select";
 import { componentTypeOptions } from "@/lib/constants";
 import type { SupplierRecord } from "@/lib/types/plm";
 
@@ -84,17 +85,11 @@ export function ComponentForm({
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Component type</span>
-        <select
+        <UiSelect
           name="componentType"
           defaultValue="module"
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
-        >
-          {componentTypeOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={componentTypeOptions}
+        />
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Manufacturer</span>
@@ -131,33 +126,33 @@ export function ComponentForm({
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Supplier</span>
-        <select
+        <UiSelect
           name="supplierId"
           defaultValue=""
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
-        >
-          <option value="">No supplier linked</option>
-          {suppliers.map((supplier) => (
-            <option key={supplier.id} value={supplier.id}>
-              {supplier.supplier_name}
-            </option>
-          ))}
-        </select>
+          placeholder="No supplier linked"
+          options={[
+            { value: "", label: "No supplier linked" },
+            ...suppliers.map((supplier) => ({
+              value: supplier.id,
+              label: supplier.supplier_name,
+            })),
+          ]}
+        />
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Parent component</span>
-        <select
+        <UiSelect
           name="parentComponentId"
           defaultValue=""
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
-        >
-          <option value="">Top-level component</option>
-          {parentComponentOptions.map((component) => (
-            <option key={component.id} value={component.id}>
-              {component.name}
-            </option>
-          ))}
-        </select>
+          placeholder="Top-level component"
+          options={[
+            { value: "", label: "Top-level component" },
+            ...parentComponentOptions.map((component) => ({
+              value: component.id,
+              label: component.name,
+            })),
+          ]}
+        />
       </label>
       <div className="flex items-end justify-end lg:col-span-2">
         <button

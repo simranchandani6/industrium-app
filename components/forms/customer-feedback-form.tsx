@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { UiSelect } from "@/components/forms/ui-select";
 import { feedbackChannelOptions } from "@/lib/constants";
 
 type CustomerFeedbackFormProps = {
@@ -66,17 +67,11 @@ export function CustomerFeedbackForm({ productId }: CustomerFeedbackFormProps) {
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Channel</span>
-        <select
+        <UiSelect
           name="channel"
           defaultValue="email"
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
-        >
-          {feedbackChannelOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={feedbackChannelOptions}
+        />
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Rating</span>

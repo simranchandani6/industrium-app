@@ -1,5 +1,10 @@
 import { z } from "zod";
 
+const seededIdSchema = z.string().trim().regex(
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+  "Invalid ID format",
+);
+
 export const productPayloadSchema = z.object({
   productName: z.string().trim().min(3),
   productSku: z.string().trim().min(3),
@@ -17,10 +22,23 @@ export const productPayloadSchema = z.object({
   versionCode: z.string().trim().min(1),
 });
 
+export const productLifecyclePayloadSchema = z.object({
+  productId: seededIdSchema,
+  lifecycleStage: z.enum([
+    "concept",
+    "design",
+    "prototype",
+    "testing",
+    "manufacturing",
+    "launch",
+    "sustaining",
+  ]),
+});
+
 export const componentPayloadSchema = z.object({
-  bomId: z.string().uuid(),
-  parentComponentId: z.string().uuid().nullable().optional(),
-  supplierId: z.string().uuid().nullable().optional(),
+  bomId: seededIdSchema,
+  parentComponentId: seededIdSchema.nullable().optional(),
+  supplierId: seededIdSchema.nullable().optional(),
   componentName: z.string().min(3),
   componentSku: z.string().min(3),
   componentType: z.enum([
@@ -37,7 +55,7 @@ export const componentPayloadSchema = z.object({
 });
 
 export const documentPayloadSchema = z.object({
-  productId: z.string().uuid(),
+  productId: seededIdSchema,
   documentName: z.string().min(3),
   documentType: z.enum([
     "cad",
@@ -58,7 +76,7 @@ export const supplierPayloadSchema = z.object({
 });
 
 export const qualityPayloadSchema = z.object({
-  productId: z.string().uuid(),
+  productId: seededIdSchema,
   issueTitle: z.string().min(3),
   description: z.string().min(10),
   severity: z.enum(["low", "medium", "high", "critical"]),
@@ -66,18 +84,18 @@ export const qualityPayloadSchema = z.object({
 });
 
 export const changeRequestPayloadSchema = z.object({
-  productId: z.string().uuid(),
+  productId: seededIdSchema,
   title: z.string().min(3),
   description: z.string().min(10),
 });
 
 export const changeRequestStatusPayloadSchema = z.object({
-  changeRequestId: z.string().uuid(),
+  changeRequestId: seededIdSchema,
   status: z.enum(["submitted", "in_review", "approved", "implemented", "rejected"]),
 });
 
 export const projectPayloadSchema = z.object({
-  productId: z.string().uuid(),
+  productId: seededIdSchema,
   projectName: z.string().min(3),
   deadline: z.string().date().nullable().optional(),
   status: z.enum([
@@ -92,7 +110,7 @@ export const projectPayloadSchema = z.object({
 });
 
 export const productVersionPayloadSchema = z.object({
-  productId: z.string().uuid(),
+  productId: seededIdSchema,
   versionCode: z.string().trim().min(1),
   summary: z.string().trim().min(10),
   releasedAt: z.string().datetime().nullable().optional(),
@@ -100,7 +118,7 @@ export const productVersionPayloadSchema = z.object({
 });
 
 export const processStepPayloadSchema = z.object({
-  productId: z.string().uuid(),
+  productId: seededIdSchema,
   sequenceNumber: z.number().int().positive(),
   stepName: z.string().min(3),
   workstation: z.string().min(2).nullable().optional(),
@@ -108,8 +126,8 @@ export const processStepPayloadSchema = z.object({
 });
 
 export const compliancePayloadSchema = z.object({
-  productId: z.string().uuid(),
-  documentId: z.string().uuid().nullable().optional(),
+  productId: seededIdSchema,
+  documentId: seededIdSchema.nullable().optional(),
   complianceName: z.string().min(3),
   authority: z.string().min(2).nullable().optional(),
   status: z.enum(["pending", "valid", "needs_review", "expired"]),
@@ -118,7 +136,7 @@ export const compliancePayloadSchema = z.object({
 });
 
 export const riskPayloadSchema = z.object({
-  productId: z.string().uuid(),
+  productId: seededIdSchema,
   riskTitle: z.string().min(3),
   description: z.string().min(10),
   severity: z.enum(["low", "medium", "high", "critical"]),
@@ -128,7 +146,7 @@ export const riskPayloadSchema = z.object({
 });
 
 export const customerFeedbackPayloadSchema = z.object({
-  productId: z.string().uuid(),
+  productId: seededIdSchema,
   customerName: z.string().min(2),
   channel: z.enum(["email", "support_ticket", "sales_call", "field_visit"]),
   rating: z.number().int().min(1).max(5).nullable().optional(),
@@ -136,6 +154,6 @@ export const customerFeedbackPayloadSchema = z.object({
 });
 
 export const notificationStatusPayloadSchema = z.object({
-  notificationId: z.string().uuid(),
+  notificationId: seededIdSchema,
   isRead: z.boolean(),
 });

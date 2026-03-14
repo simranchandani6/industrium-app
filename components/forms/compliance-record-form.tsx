@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { UiDatePicker } from "@/components/forms/ui-date-picker";
+import { UiSelect } from "@/components/forms/ui-select";
 import { complianceStatusOptions } from "@/lib/constants";
 import type { DocumentWithAccessUrl } from "@/lib/types/plm";
 
@@ -81,40 +83,33 @@ export function ComplianceRecordForm({
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Status</span>
-        <select
+        <UiSelect
           name="status"
           defaultValue="pending"
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
-        >
-          {complianceStatusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={complianceStatusOptions}
+        />
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Due date</span>
-        <input
+        <UiDatePicker
           name="dueDate"
-          type="date"
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
+          placeholder="Select a due date"
         />
       </label>
       <label className="block lg:col-span-2">
         <span className="mb-2 block text-sm text-steel">Supporting document</span>
-        <select
+        <UiSelect
           name="documentId"
           defaultValue=""
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
-        >
-          <option value="">No document linked yet</option>
-          {documents.map((document) => (
-            <option key={document.id} value={document.id}>
-              {document.document_name}
-            </option>
-          ))}
-        </select>
+          placeholder="No document linked yet"
+          options={[
+            { value: "", label: "No document linked yet" },
+            ...documents.map((document) => ({
+              value: document.id,
+              label: document.document_name,
+            })),
+          ]}
+        />
       </label>
       <label className="block lg:col-span-2">
         <span className="mb-2 block text-sm text-steel">Notes</span>

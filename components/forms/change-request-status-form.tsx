@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { UiSelect } from "@/components/forms/ui-select";
 import { changeRequestStatusOptions } from "@/lib/constants";
 
 type ChangeRequestStatusFormProps = {
@@ -40,17 +41,12 @@ export function ChangeRequestStatusForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex items-center gap-3">
-      <select
+      <UiSelect
         name="status"
         defaultValue={currentStatus}
-        className="rounded-2xl border border-ink/10 bg-white px-3 py-2 text-sm outline-none focus:border-teal"
-      >
-        {changeRequestStatusOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+        options={changeRequestStatusOptions}
+        className="min-w-[180px]"
+      />
       <button
         type="submit"
         disabled={isPending}

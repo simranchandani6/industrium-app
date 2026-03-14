@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 type PanelProps = {
+  id?: string;
   title?: string;
   eyebrow?: string;
   actions?: ReactNode;
@@ -10,9 +11,15 @@ type PanelProps = {
   className?: string;
 };
 
-export function Panel({ title, eyebrow, actions, children, className }: PanelProps) {
+export function Panel({ id, title, eyebrow, actions, children, className }: PanelProps) {
   return (
-    <section className={cn("relative overflow-visible rounded-[28px] border border-ink/10 bg-panel p-6 shadow-panel", className)}>
+    <section
+      id={id}
+      className={cn(
+        "relative scroll-mt-28 overflow-visible rounded-[28px] border border-ink/10 bg-panel p-6 shadow-panel",
+        className,
+      )}
+    >
       {(title || eyebrow || actions) && (
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>

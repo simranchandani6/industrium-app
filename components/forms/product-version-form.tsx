@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { UiDatePicker } from "@/components/forms/ui-date-picker";
+
 type ProductVersionFormProps = {
   productId: string;
 };
@@ -64,10 +66,9 @@ export function ProductVersionForm({ productId }: ProductVersionFormProps) {
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Release date</span>
-        <input
+        <UiDatePicker
           name="releasedAt"
-          type="date"
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
+          placeholder="Select a release date"
         />
       </label>
       <label className="block lg:col-span-2">

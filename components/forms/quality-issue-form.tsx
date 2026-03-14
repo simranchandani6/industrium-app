@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 
+import { UiSelect } from "@/components/forms/ui-select";
 import { qualitySeverityOptions, qualityStatusOptions } from "@/lib/constants";
 import type { ProductSummary } from "@/lib/types/plm";
 
@@ -58,35 +59,24 @@ export function QualityIssueForm({ products }: QualityIssueFormProps) {
     <form onSubmit={handleSubmit} className="grid gap-4 lg:grid-cols-2">
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Product</span>
-        <select
+        <UiSelect
           required
           name="productId"
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
           defaultValue=""
-        >
-          <option value="" disabled>
-            Select a product
-          </option>
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.product_name}
-            </option>
-          ))}
-        </select>
+          placeholder="Select a product"
+          options={products.map((product) => ({
+            value: product.id,
+            label: product.product_name,
+          }))}
+        />
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Severity</span>
-        <select
+        <UiSelect
           name="severity"
           defaultValue="medium"
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
-        >
-          {qualitySeverityOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={qualitySeverityOptions}
+        />
       </label>
       <label className="block lg:col-span-2">
         <span className="mb-2 block text-sm text-steel">Issue title</span>
@@ -109,17 +99,11 @@ export function QualityIssueForm({ products }: QualityIssueFormProps) {
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Status</span>
-        <select
+        <UiSelect
           name="status"
           defaultValue="open"
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
-        >
-          {qualityStatusOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={qualityStatusOptions}
+        />
       </label>
       <div className="flex items-end justify-end">
         <button

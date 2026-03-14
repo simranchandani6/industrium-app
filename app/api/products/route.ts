@@ -6,7 +6,7 @@ import { createNotification } from "@/lib/data/notifications";
 import { asRow, fromTable } from "@/lib/data/query-helpers";
 import { getProducts } from "@/lib/data/products";
 import { getPublicEnvironmentStatus } from "@/lib/env";
-import { productPayloadSchema } from "@/lib/validation";
+import { productLifecyclePayloadSchema, productPayloadSchema } from "@/lib/validation";
 
 export async function GET() {
   const environmentStatus = getPublicEnvironmentStatus();
@@ -139,6 +139,71 @@ export async function POST(request: Request) {
 
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Unable to create product." },
+      { status: 500 },
+    );
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    const environmentStatus = getPublicEnvironmentStatus();
+
+    if (!environmentStatus.isConfigured) {
+      return NextResponse.json({ error: "Supabase is not configured." }, { status: 503 });
+    }
+
+    const sessionContext = await getSessionContext();
+
+    if (!sessionContext) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    const payload = productLifecyclePayloadSchema.parse(await request.json());
+
+    const { data: productData, error: productError } = await fromTable(
+      sessionContext.supabase,
+      "products",
+    )
+      .update({
+        lifecycle_stage: payload.lifecycleStage,
+      })
+      .eq("id", payload.productId)
+      .eq("user_id", sessionContext.profile.id)
+      .select("id, product_name, lifecycle_stage")
+      .single();
+
+    if (productError || !productData) {
+      return NextResponse.json(
+        { error: productError?.message ?? "Unable to update lifecycle stage." },
+        { status: 400 },
+      );
+    }
+
+    await createNotification(sessionContext.supabase, {
+      userId: sessionContext.profile.id,
+      productId: productData.id,
+      title: "Lifecycle stage updated",
+      message: `${productData.product_name} moved to ${payload.lifecycleStage}.`,
+      level: "info",
+      relatedPath: `/dashboard/products/${productData.id}`,
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    if (error instanceof ZodError) {
+      const firstIssue = error.issues[0];
+
+      return NextResponse.json(
+        {
+          error: firstIssue?.message ?? "Invalid lifecycle update.",
+          issues: error.issues,
+        },
+        { status: 400 },
+      );
+    }
+
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Unable to update lifecycle stage." },
       { status: 500 },
     );
   }

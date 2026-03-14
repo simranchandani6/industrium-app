@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type FormEvent, useRef, useState } from "react";
 
+import { UiSelect } from "@/components/forms/ui-select";
 import { lifecycleStageOptions } from "@/lib/constants";
 
 export function ProductForm() {
@@ -123,17 +124,11 @@ export function ProductForm() {
       </label>
       <label className="block">
         <span className="mb-2 block text-sm text-steel">Lifecycle stage</span>
-        <select
+        <UiSelect
           name="lifecycleStage"
           defaultValue="design"
-          className="w-full rounded-2xl border border-ink/10 bg-white px-4 py-3 outline-none focus:border-teal"
-        >
-          {lifecycleStageOptions.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          options={lifecycleStageOptions}
+        />
       </label>
       <div className="flex items-end justify-end">
         <button
